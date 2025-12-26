@@ -201,8 +201,9 @@ class ECO:
             return c.fetchall()
 
 # Example
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     eco = ECO()
     eco_id = eco.create_eco("Test ECO", "Description", "alice")
     eco.add_attachment(eco_id, "test.pdf", "example.pdf", "alice")  # assumes example.pdf exists
     print(eco.get_eco_details(eco_id))
+

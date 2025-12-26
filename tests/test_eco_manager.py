@@ -4,6 +4,7 @@ import sys
 from pathlib import Path
 import datetime
 import time
+from unittest.mock import patch
 
 # Ensure we can import the module from the parent directory
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -109,3 +110,21 @@ def test_list_ecos(eco_system):
     # Verify order is DESC (newest first)
     assert ecos[0][1] == "B"
     assert ecos[1][1] == "A"
+
+def test_submit_invalid_eco(eco_system):
+    # Test submitting a non-existent ECO ID
+    assert eco_system.submit_eco(999, "user1") is False
+
+def test_add_attachment_invalid_path(eco_system):
+    eco_id = eco_system.create_eco("Attach Test", "Desc", "user1")
+    # File does not exist
+    assert eco_system.add_attachment(eco_id, "foo.txt", "/path/to/nowhere/foo.txt", "user1") is False
+
+def test_add_attachment_exception(eco_system, tmp_path):
+    eco_id = eco_system.create_eco("Attach Test", "Desc", "user1")
+    source_file = tmp_path / "valid.txt"
+    source_file.write_text("content")
+    
+    # Mock shutil.copy2 to raise an exception
+    with patch('shutil.copy2', side_effect=OSError("Disk full")):
+        assert eco_system.add_attachment(eco_id, "valid.txt", str(source_file), "user1") is False
