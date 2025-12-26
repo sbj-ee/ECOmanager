@@ -1,0 +1,2 @@
+Thrust: 5000kN
+ISP: 450s

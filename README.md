@@ -55,6 +55,9 @@ eco.add_attachment(eco_id, "spec.pdf", "/path/to/local/spec.pdf", "alice")
 
 # Approve
 eco.approve_eco(eco_id, "bob", "Approved!")
+
+# Generate a Report
+eco.generate_report(eco_id, "eco_report.md")
 ```
 
 ## Testing
