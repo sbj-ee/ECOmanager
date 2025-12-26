@@ -187,7 +187,7 @@ class ECO:
             eco['history'] = [dict(r) for r in c.fetchall()]
 
             c.execute("""
-                SELECT id, filename, mime_type, file_path, file_size, uploaded_at, u.username
+                SELECT a.id, filename, mime_type, file_path, file_size, uploaded_at, u.username
                 FROM attachments a JOIN users u ON a.uploaded_by = u.id
                 WHERE a.eco_id = ?
             """, (eco_id,))
