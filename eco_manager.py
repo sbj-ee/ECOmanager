@@ -200,6 +200,45 @@ class ECO:
             c.execute("SELECT id, title, status, created_at FROM ecos ORDER BY created_at DESC")
             return c.fetchall()
 
+    def generate_report(self, eco_id: int, output_file: str) -> bool:
+        data = self.get_eco_details(eco_id)
+        if not data:
+            return False
+            
+        try:
+            with open(output_file, 'w', encoding='utf-8') as f:
+                f.write(f"# ECO Report: {data['title']}\n\n")
+                f.write(f"**ID:** {data['id']}  \n")
+                f.write(f"**Status:** {data['status']}  \n")
+                f.write(f"**Created By:** {data['created_by']} on {data['created_at']}  \n")
+                f.write(f"**Last Updated:** {data['updated_at']}  \n\n")
+                
+                f.write("## Description\n\n")
+                f.write(f"{data['description']}\n\n")
+                
+                f.write("## Attachments\n\n")
+                if data['attachments']:
+                    f.write("| Filename | Uploaded By | Date |\n")
+                    f.write("| --- | --- | --- |\n")
+                    for att in data['attachments']:
+                        f.write(f"| {att['filename']} | {att['username']} | {att['uploaded_at']} |\n")
+                else:
+                    f.write("No attachments.\n")
+                f.write("\n")
+
+                f.write("## History\n\n")
+                if data['history']:
+                    f.write("| Action | User | Date | Comment |\n")
+                    f.write("| --- | --- | --- | --- |\n")
+                    for h in data['history']:
+                        comment = h['comment'] if h['comment'] else ""
+                        f.write(f"| {h['action']} | {h['username']} | {h['performed_at']} | {comment} |\n")
+                else:
+                    f.write("No history.\n")
+            return True
+        except IOError:
+            return False
+
 # Example
 if __name__ == "__main__":  # pragma: no cover
     eco = ECO()

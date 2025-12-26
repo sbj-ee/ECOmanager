@@ -1,6 +1,7 @@
 import pytest
 import os
 import sys
+import sqlite3
 from pathlib import Path
 import datetime
 import time
@@ -128,3 +129,46 @@ def test_add_attachment_exception(eco_system, tmp_path):
     # Mock shutil.copy2 to raise an exception
     with patch('shutil.copy2', side_effect=OSError("Disk full")):
         assert eco_system.add_attachment(eco_id, "valid.txt", str(source_file), "user1") is False
+
+def test_generate_report(eco_system, tmp_path):
+    eco_id = eco_system.create_eco("Report Test", "Some Description", "userR")
+    eco_system.submit_eco(eco_id, "userR", "Submit Comment")
+    
+    # Add dummy attachment
+    att_source = tmp_path / "dummy.txt"
+    att_source.write_text("content")
+    eco_system.add_attachment(eco_id, "dummy.txt", str(att_source), "userR")
+    
+    report_file = tmp_path / "report.md"
+    assert eco_system.generate_report(eco_id, str(report_file)) is True
+    
+    content = report_file.read_text(encoding='utf-8')
+    assert "# ECO Report: Report Test" in content
+    assert "**Status:** SUBMITTED" in content
+    assert "Some Description" in content
+    assert "dummy.txt" in content
+    assert "Submit Comment" in content
+
+def test_generate_report_invalid_id(eco_system, tmp_path):
+    report_file = tmp_path / "fail.md"
+    assert eco_system.generate_report(999, str(report_file)) is False
+
+def test_generate_report_io_error(eco_system, tmp_path):
+    eco_id = eco_system.create_eco("IO Test", "Desc", "user1")
+    # Tries to write to a directory path instead of a file
+    assert eco_system.generate_report(eco_id, str(tmp_path)) is False
+
+def test_generate_report_no_data(eco_system, tmp_path):
+    eco_id = eco_system.create_eco("Empty Test", "Desc", "user1")
+    
+    # Manually clear history to test the "No history" branch
+    with sqlite3.connect(eco_system.db_path) as conn:
+        conn.execute("DELETE FROM eco_history WHERE eco_id = ?", (eco_id,))
+        conn.commit()
+        
+    report_file = tmp_path / "empty_report.md"
+    assert eco_system.generate_report(eco_id, str(report_file)) is True
+    
+    content = report_file.read_text(encoding='utf-8')
+    assert "No attachments." in content
+    assert "No history." in content
