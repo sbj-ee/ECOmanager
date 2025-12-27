@@ -66,6 +66,10 @@ class ECO:
                     FOREIGN KEY (user_id) REFERENCES users(id)
                 );
             """)
+            try:
+                c.execute("ALTER TABLE users ADD COLUMN password_hash TEXT")
+            except sqlite3.OperationalError:
+                pass
             conn.commit()
 
     def get_or_create_user(self, username: str) -> int:
@@ -223,6 +227,13 @@ class ECO:
             return True
         except Exception:
             return False
+
+    def get_attachment_path(self, eco_id: int, filename: str) -> Optional[str]:
+        with sqlite3.connect(self.db_path) as conn:
+            c = conn.cursor()
+            c.execute("SELECT file_path FROM attachments WHERE eco_id = ? AND filename = ?", (eco_id, filename))
+            row = c.fetchone()
+            return row[0] if row else None
 
     def get_eco_details(self, eco_id: int) -> Optional[dict]:
         with sqlite3.connect(self.db_path) as conn:

@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ECO Manager - Login</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body class="flex-center" style="justify-content: center; align-items: center; height: 100vh;">
+
+    <div class="glass-card animate-fade-in" style="width: 100%; max-width: 400px;">
+        <h1 style="text-align: center; margin-bottom: 2rem;">ECO Manager</h1>
+
+        <div id="login-form">
+            <h2 style="font-size: 1.25rem; color: var(--text-muted); margin-bottom: 1.5rem;">Sign In</h2>
+            <form onsubmit="handleLogin(event)">
+                <label style="font-size: 0.875rem; color: var(--text-muted);">Username</label>
+                <input type="text" id="username" required>
+
+                <label style="font-size: 0.875rem; color: var(--text-muted);">Password</label>
+                <input type="password" id="password" required>
+
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Login</button>
+            </form>
+            <p style="margin-top: 1rem; text-align: center; color: var(--text-muted);">
+                New here? <a href="#" onclick="toggleAuth()" style="color: var(--primary);">Create account</a>
+            </p>
+        </div>
+
+        <div id="register-form" class="hidden">
+            <h2 style="font-size: 1.25rem; color: var(--text-muted); margin-bottom: 1.5rem;">Create Account</h2>
+            <form onsubmit="handleRegister(event)">
+                <label style="font-size: 0.875rem; color: var(--text-muted);">Username</label>
+                <input type="text" id="reg-username" required>
+
+                <label style="font-size: 0.875rem; color: var(--text-muted);">Password</label>
+                <input type="password" id="reg-password" required>
+
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Sign Up</button>
+            </form>
+            <p style="margin-top: 1rem; text-align: center; color: var(--text-muted);">
+                Already have an account? <a href="#" onclick="toggleAuth()" style="color: var(--primary);">Login</a>
+            </p>
+        </div>
+
+        <div id="error-msg" style="color: var(--danger); text-align: center; margin-top: 1rem;" class="hidden"></div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+
+</html>

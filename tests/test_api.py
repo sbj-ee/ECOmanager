@@ -155,6 +155,15 @@ def test_attachment_upload(auth_headers, tmp_path):
     assert len(details["attachments"]) == 1
     assert details["attachments"][0]["filename"] == "test.txt"
 
+    # Test download
+    resp = client.get(f"/ecos/{eco_id}/attachments/test.txt", headers=auth_headers)
+    assert resp.status_code == 200
+    assert resp.content == file_content
+    
+    # Test download nonexistent
+    resp = client.get(f"/ecos/{eco_id}/attachments/ghost.txt", headers=auth_headers)
+    assert resp.status_code == 404
+
 def test_attachment_failure(auth_headers):
     file_content = b"test content"
     files = {"file": ("test.txt", file_content, "text/plain")}

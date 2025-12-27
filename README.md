@@ -10,6 +10,7 @@ A simple Engineering Change Order (ECO) management system built with Python and 
 - **Attachments**: Support for file attachments to ECOs.
 - **Report Generation**: Export ECO details to Markdown reports.
 - **REST API**: Full-featured API built with FastAPI.
+- **Web Interface**: Modern UI for managing ECOs.
 
 ## Prerequisites
 
@@ -74,6 +75,8 @@ uvicorn api:app --reload
 
 The API will be available at `http://127.0.0.1:8000`. 
 Interactive documentation is available at `http://127.0.0.1:8000/docs`.
+
+**Web Interface**: Access the dashboard at `http://127.0.0.1:8000`.
 
 ### Authentication
 

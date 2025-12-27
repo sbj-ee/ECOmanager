@@ -1,5 +1,7 @@
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException, BackgroundTasks, Depends, Header
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, RedirectResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
 import shutil
@@ -7,7 +9,24 @@ import os
 from eco_manager import ECO
 
 app = FastAPI(title="ECO Manager API")
+
+# Mount static files
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+# CORS (optional but good for dev)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 eco_system = ECO()
+
+@app.get("/")
+def read_root():
+    return RedirectResponse(url="/static/index.html")
 
 # Dependencies
 def get_current_user(x_api_token: str = Header(...)):
@@ -114,6 +133,13 @@ def add_attachment(eco_id: int, file: UploadFile = File(...), username: str = De
             os.remove(tmp_path)
             
     return {"message": "Attachment added"}
+
+@app.get("/ecos/{eco_id}/attachments/{filename}")
+def get_attachment(eco_id: int, filename: str, username: str = Depends(get_current_user)):
+    file_path = eco_system.get_attachment_path(eco_id, filename)
+    if not file_path or not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="Attachment not found")
+    return FileResponse(file_path, filename=filename)
 
 @app.get("/ecos/{eco_id}/report")
 def download_report(eco_id: int, background_tasks: BackgroundTasks, username: str = Depends(get_current_user)):
