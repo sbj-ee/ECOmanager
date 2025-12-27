@@ -32,7 +32,10 @@ def read_root():
 class User(BaseModel):
     id: int
     username: str
-    is_admin: int  # SQLite bool is int
+    is_admin: int
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    email: Optional[str] = None
 
 class TokenRequest(BaseModel):
     username: str
@@ -41,6 +44,9 @@ class TokenRequest(BaseModel):
 class UserRegister(BaseModel):
     username: str
     password: str
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    email: Optional[str] = None
 
 class TokenResponse(BaseModel):
     token: str
@@ -73,7 +79,7 @@ def get_current_admin(user: User = Depends(get_current_user)) -> User:
 
 @app.post("/register", status_code=201)
 def register(req: UserRegister):
-    success = eco_system.register_user(req.username, req.password)
+    success = eco_system.register_user(req.username, req.password, req.first_name, req.last_name, req.email)
     if not success:
         raise HTTPException(status_code=400, detail="Username already exists")
     return {"message": "User registered successfully"}
