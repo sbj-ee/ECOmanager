@@ -5,6 +5,7 @@ import shutil
 from typing import List, Optional, Tuple
 from pathlib import Path
 import secrets
+import bcrypt
 
 class ECO:
     def __init__(self, db_path: str = "eco_system.db", attachments_dir: str = "attachments"):
@@ -19,7 +20,8 @@ class ECO:
             c.executescript("""
                 CREATE TABLE IF NOT EXISTS users (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    username TEXT UNIQUE NOT NULL
+                    username TEXT UNIQUE NOT NULL,
+                    password_hash TEXT
                 );
 
                 CREATE TABLE IF NOT EXISTS ecos (
@@ -77,8 +79,35 @@ class ECO:
             conn.commit()
             return c.lastrowid
 
-    def generate_token(self, username: str) -> str:
-        user_id = self.get_or_create_user(username)
+    def register_user(self, username: str, password: str) -> bool:
+        # bcrypt.hashpw returns bytes, we decode to store as text
+        password_hash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                c = conn.cursor()
+                c.execute("INSERT INTO users (username, password_hash) VALUES (?, ?)", (username, password_hash))
+                conn.commit()
+            return True
+        except sqlite3.IntegrityError:
+            return False
+
+    def verify_password(self, username: str, password: str) -> bool:
+        with sqlite3.connect(self.db_path) as conn:
+            c = conn.cursor()
+            c.execute("SELECT password_hash FROM users WHERE username = ?", (username,))
+            row = c.fetchone()
+            if not row or not row[0]:
+                return False
+            # row[0] is str, we need bytes for checkpw
+            stored_hash = row[0].encode('utf-8')
+            return bcrypt.checkpw(password.encode('utf-8'), stored_hash)
+
+    def generate_token(self, username: str, password: str) -> Optional[str]:
+        if not self.verify_password(username, password):
+            return None
+            
+        # User exists and password correct, get ID
+        user_id = self.get_or_create_user(username) 
         token = secrets.token_hex(32)
         now = datetime.datetime.now().isoformat()
         with sqlite3.connect(self.db_path) as conn:
