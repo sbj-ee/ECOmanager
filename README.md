@@ -77,14 +77,22 @@ Interactive documentation is available at `http://127.0.0.1:8000/docs`.
 
 ### Authentication
 
-The API uses token-based authentication.
+The API uses token-based authentication. Users must first register to set a password.
 
-1.  **Generate a Token**:
+1.  **Register a User**:
+
+    ```bash
+    curl -X POST http://127.0.0.1:8000/register \
+      -H "Content-Type: application/json" \
+      -d '{"username": "alice", "password": "secretpassword"}'
+    ```
+
+2.  **Generate a Token**:
 
     ```bash
     curl -X POST http://127.0.0.1:8000/token \
       -H "Content-Type: application/json" \
-      -d '{"username": "your_username"}'
+      -d '{"username": "alice", "password": "secretpassword"}'
     ```
 
     Response:
@@ -92,7 +100,7 @@ The API uses token-based authentication.
     {"token": "your_generated_token"}
     ```
 
-2.  **Use the Token**: Include the token in the `X-API-Token` header for all requests.
+3.  **Use the Token**: Include the token in the `X-API-Token` header for all requests.
 
     ```bash
     curl -X GET http://127.0.0.1:8000/ecos \

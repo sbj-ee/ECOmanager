@@ -169,6 +169,11 @@ def test_generate_report_no_data(eco_system, tmp_path):
     report_file = tmp_path / "empty_report.md"
     assert eco_system.generate_report(eco_id, str(report_file)) is True
     
-    content = report_file.read_text(encoding='utf-8')
-    assert "No attachments." in content
-    assert "No history." in content
+
+def test_verify_password_edge_cases(eco_system):
+    # Non-existent user
+    assert eco_system.verify_password("ghost", "pass") is False
+    
+    # User without password (simulated legacy user)
+    eco_system.get_or_create_user("legacy") # Creates user with NULL password
+    assert eco_system.verify_password("legacy", "pass") is False

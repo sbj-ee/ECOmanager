@@ -30,7 +30,9 @@ def test_eco_system(tmp_path):
 
 @pytest.fixture
 def auth_headers(test_eco_system):
-    token = test_eco_system.generate_token("api_user")
+    # Must register to get token now
+    test_eco_system.register_user("api_user", "password")
+    token = test_eco_system.generate_token("api_user", "password")
     return {"X-API-Token": token}
 
 def test_auth_failure():
@@ -41,8 +43,21 @@ def test_auth_failure():
     assert response.status_code == 401
     assert response.json()["detail"] == "Invalid API Token"
 
-def test_generate_token():
-    resp = client.post("/token", json={"username": "newuser"})
+def test_register_and_token():
+    # Register
+    resp = client.post("/register", json={"username": "newuser", "password": "pw"})
+    assert resp.status_code == 201
+    
+    # Register duplicate
+    resp = client.post("/register", json={"username": "newuser", "password": "pw"})
+    assert resp.status_code == 400
+    
+    # Get token invalid pw
+    resp = client.post("/token", json={"username": "newuser", "password": "wrong"})
+    assert resp.status_code == 401
+    
+    # Get token
+    resp = client.post("/token", json={"username": "newuser", "password": "pw"})
     assert resp.status_code == 200
     assert "token" in resp.json()
 

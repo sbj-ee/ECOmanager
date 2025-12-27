@@ -19,6 +19,11 @@ def get_current_user(x_api_token: str = Header(...)):
 # Models
 class TokenRequest(BaseModel):
     username: str
+    password: str
+
+class UserRegister(BaseModel):
+    username: str
+    password: str
 
 class TokenResponse(BaseModel):
     token: str
@@ -36,9 +41,18 @@ class ECOItem(BaseModel):
     status: str
     created_at: str
 
+@app.post("/register", status_code=201)
+def register(req: UserRegister):
+    success = eco_system.register_user(req.username, req.password)
+    if not success:
+        raise HTTPException(status_code=400, detail="Username already exists")
+    return {"message": "User registered successfully"}
+
 @app.post("/token", response_model=TokenResponse)
 def generate_token(req: TokenRequest):
-    token = eco_system.generate_token(req.username)
+    token = eco_system.generate_token(req.username, req.password)
+    if not token:
+        raise HTTPException(status_code=401, detail="Invalid credentials")
     return {"token": token}
 
 @app.post("/ecos", response_model=Dict[str, Any], status_code=201)
