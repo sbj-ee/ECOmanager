@@ -90,8 +90,8 @@ def test_attachments(eco_system, tmp_path):
     details = eco_system.get_eco_details(eco_id)
     attachments = details['attachments']
     assert len(attachments) == 1
-    # It uses the source filename
-    assert attachments[0]['filename'] == "source.txt" 
+    # It uses the provided filename now
+    assert attachments[0]['filename'] == "ignored_name.txt" 
     
     # Check if file was copied to attachments dir
     stored_path = attachments[0]['file_path']

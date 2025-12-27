@@ -4,6 +4,7 @@ import os
 import shutil
 from typing import List, Optional, Tuple
 from pathlib import Path
+import secrets
 
 class ECO:
     def __init__(self, db_path: str = "eco_system.db", attachments_dir: str = "attachments"):
@@ -55,6 +56,13 @@ class ECO:
                     FOREIGN KEY (eco_id) REFERENCES ecos(id),
                     FOREIGN KEY (uploaded_by) REFERENCES users(id)
                 );
+
+                CREATE TABLE IF NOT EXISTS api_tokens (
+                    token TEXT PRIMARY KEY,
+                    user_id INTEGER NOT NULL,
+                    created_at TEXT NOT NULL,
+                    FOREIGN KEY (user_id) REFERENCES users(id)
+                );
             """)
             conn.commit()
 
@@ -68,6 +76,30 @@ class ECO:
             c.execute("INSERT INTO users (username) VALUES (?)", (username,))
             conn.commit()
             return c.lastrowid
+
+    def generate_token(self, username: str) -> str:
+        user_id = self.get_or_create_user(username)
+        token = secrets.token_hex(32)
+        now = datetime.datetime.now().isoformat()
+        with sqlite3.connect(self.db_path) as conn:
+            c = conn.cursor()
+            c.execute("INSERT INTO api_tokens (token, user_id, created_at) VALUES (?, ?, ?)", (token, user_id, now))
+            conn.commit()
+        return token
+
+    def get_user_from_token(self, token: str) -> Optional[str]:
+        with sqlite3.connect(self.db_path) as conn:
+            c = conn.cursor()
+            c.execute("""
+                SELECT u.username 
+                FROM api_tokens t 
+                JOIN users u ON t.user_id = u.id 
+                WHERE t.token = ?
+            """, (token,))
+            row = c.fetchone()
+            if row:
+                return row[0]
+            return None
 
     def create_eco(self, title: str, description: str, username: str) -> int:
         user_id = self.get_or_create_user(username)
@@ -145,7 +177,7 @@ class ECO:
                 return False
 
             # Create unique filename
-            safe_filename = src_path.name
+            safe_filename = Path(filename).name
             dest_path = self.attachments_dir / f"{eco_id}_{safe_filename}"
             shutil.copy2(src_path, dest_path)
 
