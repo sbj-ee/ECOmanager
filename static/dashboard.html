@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ECO Manager - Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <nav class="glass-card"
+        style="border-radius: 0; border-left: none; border-right: none; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center;">
+        <div style="font-weight: 700; font-size: 1.5rem;">ECO Manager</div>
+        <div>
+            <span id="user-display" style="margin-right: 1rem; color: var(--text-muted);"></span>
+            <button onclick="logout()" class="btn" style="background: rgba(255,255,255,0.1);">Logout</button>
+        </div>
+    </nav>
+
+    <div class="container animate-fade-in">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+            <h1>Dashboard</h1>
+            <button onclick="showCreateModal()" class="btn btn-primary">+ New ECO</button>
+        </div>
+
+        <div class="glass-card">
+            <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                <thead>
+                    <tr style="border-bottom: 1px solid var(--border);">
+                        <th style="padding: 1rem;">ID</th>
+                        <th style="padding: 1rem;">Title</th>
+                        <th style="padding: 1rem;">Status</th>
+                        <th style="padding: 1rem;">Created At</th>
+                        <th style="padding: 1rem;">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="eco-list">
+                    <!-- ECOs will be loaded here -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Create Modal -->
+    <div id="create-modal" class="hidden"
+        style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); display: flex; justify-content: center; align-items: center; z-index: 100;">
+        <div class="glass-card" style="width: 500px; max-width: 90%;">
+            <h2>Create New ECO</h2>
+            <form onsubmit="handleCreateECO(event)">
+                <label>Title</label>
+                <input type="text" id="eco-title" required>
+
+                <label>Description</label>
+                <textarea id="eco-desc" rows="4" required></textarea>
+
+                <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 1rem;">
+                    <button type="button" onclick="hideCreateModal()" class="btn"
+                        style="background: transparent; border: 1px solid var(--border);">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ECO Details Modal (Simplified for single page flow) -->
+    <div id="detail-modal" class="hidden"
+        style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); overflow-y: auto; z-index: 100;">
+        <div class="glass-card" style="width: 800px; max-width: 95%; margin: 5vh auto;">
+            <div style="display: flex; justify-content: space-between; align-items: start;">
+                <h2 id="detail-title">ECO Title</h2>
+                <button onclick="hideDetailModal()"
+                    style="background:none; border:none; color: white; font-size: 1.5rem; cursor:pointer;">&times;</button>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 2rem;">
+                <div>
+                    <p id="detail-desc" style="white-space: pre-wrap; color: var(--text-muted);"></p>
+
+                    <h3>Attachments</h3>
+                    <ul id="detail-files" style="list-style: none; padding: 0;"></ul>
+
+                    <form onsubmit="handleUpload(event)"
+                        style="margin-top: 1rem; border-top: 1px solid var(--border); padding-top: 1rem;">
+                        <label class="btn"
+                            style="background: rgba(255,255,255,0.1); cursor: pointer; display: inline-block;">
+                            Choose File <input type="file" id="upload-file" hidden
+                                onchange="this.form.dispatchEvent(new Event('submit'))">
+                        </label>
+                    </form>
+                </div>
+
+                <div style="background: rgba(0,0,0,0.2); padding: 1rem; border-radius: 8px;">
+                    <div style="margin-bottom: 1rem;">
+                        <strong>Status: </strong> <span id="detail-status" style="color: var(--primary);">DRAFT</span>
+                    </div>
+                    <div style="margin-bottom: 1rem;">
+                        <strong>ID: </strong> <span id="detail-id"></span>
+                    </div>
+
+                    <div id="actions-area" style="display: flex; flex-direction: column; gap: 0.5rem;">
+                        <!-- Buttons injected via JS -->
+                    </div>
+
+                    <hr style="border: 0; border-top: 1px solid var(--border); margin: 1rem 0;">
+
+                    <button onclick="downloadReport()" class="btn btn-success" style="width: 100%;">Download
+                        Report</button>
+                </div>
+            </div>
+
+            <div style="margin-top: 2rem;">
+                <h3>History</h3>
+                <div id="detail-history" style="font-size: 0.875rem; color: var(--text-muted);"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        // Init dashboard
+        if (!localStorage.getItem('eco_token')) {
+            window.location.href = 'index.html';
+        } else {
+            document.getElementById('user-display').textContent = localStorage.getItem('eco_user');
+            loadECOs();
+        }
+    </script>
+</body>
+
+</html>
