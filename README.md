@@ -8,6 +8,8 @@ A simple Engineering Change Order (ECO) management system built with Python and 
 - **ECO Lifecycle**: Create, Submit, Approve, and Reject ECOs.
 - **History Tracking**: full audit history of actions performed on an ECO.
 - **Attachments**: Support for file attachments to ECOs.
+- **Report Generation**: Export ECO details to Markdown reports.
+- **REST API**: Full-featured API built with FastAPI.
 
 ## Prerequisites
 
@@ -28,10 +30,10 @@ A simple Engineering Change Order (ECO) management system built with Python and 
     - On macOS/Linux: `source .venv/bin/activate`
     - On Windows: `.venv\Scripts\activate`
 
-4.  Install dependencies (currently only for testing):
+4.  Install dependencies:
 
     ```bash
-    pip install pytest
+    pip install -r requirements.txt
     ```
 
 ## Usage
@@ -59,6 +61,43 @@ eco.approve_eco(eco_id, "bob", "Approved!")
 # Generate a Report
 eco.generate_report(eco_id, "eco_report.md")
 ```
+
+## API
+
+The project includes a REST API built with FastAPI.
+
+To run the API server:
+
+```bash
+uvicorn api:app --reload
+```
+
+The API will be available at `http://127.0.0.1:8000`. 
+Interactive documentation is available at `http://127.0.0.1:8000/docs`.
+
+### Authentication
+
+The API uses token-based authentication.
+
+1.  **Generate a Token**:
+
+    ```bash
+    curl -X POST http://127.0.0.1:8000/token \
+      -H "Content-Type: application/json" \
+      -d '{"username": "your_username"}'
+    ```
+
+    Response:
+    ```json
+    {"token": "your_generated_token"}
+    ```
+
+2.  **Use the Token**: Include the token in the `X-API-Token` header for all requests.
+
+    ```bash
+    curl -X GET http://127.0.0.1:8000/ecos \
+      -H "X-API-Token: your_generated_token"
+    ```
 
 ## Testing
 
