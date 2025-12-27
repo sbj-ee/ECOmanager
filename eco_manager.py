@@ -21,7 +21,8 @@ class ECO:
                 CREATE TABLE IF NOT EXISTS users (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     username TEXT UNIQUE NOT NULL,
-                    password_hash TEXT
+                    password_hash TEXT,
+                    is_admin INTEGER DEFAULT 0
                 );
 
                 CREATE TABLE IF NOT EXISTS ecos (
@@ -70,6 +71,12 @@ class ECO:
                 c.execute("ALTER TABLE users ADD COLUMN password_hash TEXT")
             except sqlite3.OperationalError:
                 pass
+            
+            try:
+                c.execute("ALTER TABLE users ADD COLUMN is_admin INTEGER DEFAULT 0")
+            except sqlite3.OperationalError:
+                pass
+
             conn.commit()
 
     def get_or_create_user(self, username: str) -> int:
@@ -79,7 +86,8 @@ class ECO:
             row = c.fetchone()
             if row:
                 return row[0]
-            c.execute("INSERT INTO users (username) VALUES (?)", (username,))
+            # Regular users created implicitly are not admins
+            c.execute("INSERT INTO users (username, is_admin) VALUES (?, 0)", (username,))
             conn.commit()
             return c.lastrowid
 
@@ -89,7 +97,12 @@ class ECO:
         try:
             with sqlite3.connect(self.db_path) as conn:
                 c = conn.cursor()
-                c.execute("INSERT INTO users (username, password_hash) VALUES (?, ?)", (username, password_hash))
+                # Check if this is the first user
+                c.execute("SELECT COUNT(*) FROM users")
+                count = c.fetchone()[0]
+                is_admin = 1 if count == 0 else 0
+                
+                c.execute("INSERT INTO users (username, password_hash, is_admin) VALUES (?, ?, ?)", (username, password_hash, is_admin))
                 conn.commit()
             return True
         except sqlite3.IntegrityError:
@@ -120,19 +133,42 @@ class ECO:
             conn.commit()
         return token
 
-    def get_user_from_token(self, token: str) -> Optional[str]:
+    def get_user_from_token(self, token: str) -> Optional[dict]:
         with sqlite3.connect(self.db_path) as conn:
+            conn.row_factory = sqlite3.Row
             c = conn.cursor()
             c.execute("""
-                SELECT u.username 
+                SELECT u.id, u.username, u.is_admin 
                 FROM api_tokens t 
                 JOIN users u ON t.user_id = u.id 
                 WHERE t.token = ?
             """, (token,))
             row = c.fetchone()
-            if row:
-                return row[0]
-            return None
+            return dict(row) if row else None
+
+    def get_all_users(self) -> List[dict]:
+        with sqlite3.connect(self.db_path) as conn:
+            conn.row_factory = sqlite3.Row
+            c = conn.cursor()
+            c.execute("SELECT id, username, is_admin FROM users")
+            return [dict(row) for row in c.fetchall()]
+
+    def delete_user(self, user_id: int) -> bool:
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                c = conn.cursor()
+                # Deleting a user might cascade or fail if referenced.
+                # Assuming simple deletion for now, foreign keys might restrict.
+                # If foreign keys are enforced, we might need to handle ECOs created by them.
+                # But SQLite FK off by default unless PRAGMA foreign_keys = ON;
+                # Let's delete references first just to be safe/clean? 
+                # Or just delete user and let ECOs become orphans (created_by ID remains).
+                
+                # Check if trying to delete last admin? Maybe later.
+                c.execute("DELETE FROM users WHERE id = ?", (user_id,))
+                return c.rowcount > 0
+        except sqlite3.Error:
+            return False
 
     def create_eco(self, title: str, description: str, username: str) -> int:
         user_id = self.get_or_create_user(username)

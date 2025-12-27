@@ -49,6 +49,20 @@ The project includes a modern, dark-mode web interface for managing ECOs.
     -   Upload and view attachments.
     -   Submit, Approve, or Reject ECOs.
     -   Download PDF-ready Markdown reports.
+    -   (Admins) Manage users via the Admin Panel.
+
+## Administration
+
+The system supports two user roles: **User** and **Admin**.
+-   **Admins** can manage users (view list, delete users).
+-   The **first user** registered in the system is automatically assigned Admin privileges.
+
+### Promoting Users
+To promote an existing user to Admin, use the provided helper script:
+
+```bash
+python3 make_admin.py <username>
+```
 
 ## Python Library Usage
 

@@ -29,6 +29,7 @@ async function handleLogin(e) {
             const data = await res.json();
             localStorage.setItem('eco_token', data.token);
             localStorage.setItem('eco_user', user);
+            localStorage.setItem('eco_is_admin', data.is_admin);
             window.location.href = 'dashboard.html';
         } else {
             showError('Invalid credentials');
@@ -297,5 +298,87 @@ async function viewAttachment(filename) {
         }
     } catch (e) {
         alert('Error fetching attachment');
+    }
+}
+
+// Admin
+function openAdmin() {
+    loadUsers();
+    document.getElementById('admin-modal').classList.remove('hidden');
+}
+
+function hideAdminModal() {
+    document.getElementById('admin-modal').classList.add('hidden');
+}
+
+async function loadUsers() {
+    const token = localStorage.getItem('eco_token');
+    const res = await fetch(`${API_URL}/admin/users`, {
+        headers: { 'X-API-Token': token }
+    });
+
+    if (!res.ok) {
+        alert("Failed to load users");
+        return;
+    }
+
+    const users = await res.json();
+    const tbody = document.getElementById('user-list');
+    tbody.innerHTML = '';
+
+    users.forEach(u => {
+        const tr = document.createElement('tr');
+        tr.style.borderBottom = '1px solid var(--border)';
+        const isAdminIdx = u.is_admin ? '<span style="color:var(--success)">Admin</span>' : 'User';
+        const deleteBtn = u.is_admin ? '' : `<button onclick="deleteUser(${u.id})" class="btn btn-danger" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;">Delete</button>`;
+
+        tr.innerHTML = `
+            <td style="padding: 0.5rem;">${u.id || ''}</td>
+            <td style="padding: 0.5rem;">${u.username}</td>
+            <td style="padding: 0.5rem;">${isAdminIdx}</td>
+            <td style="padding: 0.5rem;">${deleteBtn}</td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+async function deleteUser(userId) {
+    if (!confirm("Are you sure you want to delete this user?")) return;
+
+    const token = localStorage.getItem('eco_token');
+    const res = await fetch(`${API_URL}/admin/users/${userId}`, {
+        method: 'DELETE',
+        headers: { 'X-API-Token': token }
+    });
+
+    if (res.ok) {
+        loadUsers();
+    } else {
+        alert("Failed to delete user");
+    }
+}
+
+async function handleAdminAddUser(e) {
+    e.preventDefault();
+    const userIn = document.getElementById('admin-new-user');
+    const passIn = document.getElementById('admin-new-pass');
+
+    try {
+        const res = await fetch(`${API_URL}/register`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: userIn.value, password: passIn.value })
+        });
+
+        if (res.ok) {
+            userIn.value = '';
+            passIn.value = '';
+            loadUsers(); // Refresh list to see new user
+        } else {
+            const data = await res.json();
+            alert(data.detail || "Failed to create user");
+        }
+    } catch (err) {
+        alert("Connection error");
     }
 }
