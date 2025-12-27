@@ -134,14 +134,27 @@
             <!-- Add User Form -->
             <div style="background: rgba(0,0,0,0.2); padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
                 <h3 style="margin-bottom: 1rem; font-size: 1rem;">Add New User</h3>
-                <form onsubmit="handleAdminAddUser(event)" style="display: flex; gap: 1rem; align-items: end;">
-                    <div style="flex: 1;">
+                <form onsubmit="handleAdminAddUser(event)"
+                    style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: end;">
+                    <div style="width: 150px;">
                         <label style="font-size: 0.8rem; display: block; margin-bottom: 0.25rem;">Username</label>
                         <input type="text" id="admin-new-user" required style="margin-bottom: 0; padding: 0.5rem;">
                     </div>
-                    <div style="flex: 1;">
+                    <div style="width: 150px;">
                         <label style="font-size: 0.8rem; display: block; margin-bottom: 0.25rem;">Password</label>
                         <input type="password" id="admin-new-pass" required style="margin-bottom: 0; padding: 0.5rem;">
+                    </div>
+                    <div style="width: 150px;">
+                        <label style="font-size: 0.8rem; display: block; margin-bottom: 0.25rem;">First Name</label>
+                        <input type="text" id="admin-new-first" style="margin-bottom: 0; padding: 0.5rem;">
+                    </div>
+                    <div style="width: 150px;">
+                        <label style="font-size: 0.8rem; display: block; margin-bottom: 0.25rem;">Last Name</label>
+                        <input type="text" id="admin-new-last" style="margin-bottom: 0; padding: 0.5rem;">
+                    </div>
+                    <div style="width: 200px;">
+                        <label style="font-size: 0.8rem; display: block; margin-bottom: 0.25rem;">Email</label>
+                        <input type="email" id="admin-new-email" style="margin-bottom: 0; padding: 0.5rem;">
                     </div>
                     <button type="submit" class="btn btn-success" style="padding: 0.5rem 1rem;">Add</button>
                 </form>
@@ -152,6 +165,8 @@
                     <tr style="border-bottom: 1px solid var(--border);">
                         <th style="padding: 0.5rem;">ID</th>
                         <th style="padding: 0.5rem;">Username</th>
+                        <th style="padding: 0.5rem;">Unmasked Name</th>
+                        <th style="padding: 0.5rem;">Email</th>
                         <th style="padding: 0.5rem;">Role</th>
                         <th style="padding: 0.5rem;">Action</th>
                     </tr>

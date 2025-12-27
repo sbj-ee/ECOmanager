@@ -22,7 +22,10 @@ class ECO:
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     username TEXT UNIQUE NOT NULL,
                     password_hash TEXT,
-                    is_admin INTEGER DEFAULT 0
+                    is_admin INTEGER DEFAULT 0,
+                    first_name TEXT,
+                    last_name TEXT,
+                    email TEXT
                 );
 
                 CREATE TABLE IF NOT EXISTS ecos (
@@ -77,6 +80,21 @@ class ECO:
             except sqlite3.OperationalError:
                 pass
 
+            try:
+                c.execute("ALTER TABLE users ADD COLUMN first_name TEXT")
+            except sqlite3.OperationalError:
+                pass
+
+            try:
+                c.execute("ALTER TABLE users ADD COLUMN last_name TEXT")
+            except sqlite3.OperationalError:
+                pass
+
+            try:
+                c.execute("ALTER TABLE users ADD COLUMN email TEXT")
+            except sqlite3.OperationalError:
+                pass
+
             conn.commit()
 
     def get_or_create_user(self, username: str) -> int:
@@ -91,7 +109,7 @@ class ECO:
             conn.commit()
             return c.lastrowid
 
-    def register_user(self, username: str, password: str) -> bool:
+    def register_user(self, username: str, password: str, first_name: str = None, last_name: str = None, email: str = None) -> bool:
         # bcrypt.hashpw returns bytes, we decode to store as text
         password_hash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
         try:
@@ -102,7 +120,10 @@ class ECO:
                 count = c.fetchone()[0]
                 is_admin = 1 if count == 0 else 0
                 
-                c.execute("INSERT INTO users (username, password_hash, is_admin) VALUES (?, ?, ?)", (username, password_hash, is_admin))
+                c.execute("""
+                    INSERT INTO users (username, password_hash, is_admin, first_name, last_name, email)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                """, (username, password_hash, is_admin, first_name, last_name, email))
                 conn.commit()
             return True
         except sqlite3.IntegrityError:
@@ -150,7 +171,7 @@ class ECO:
         with sqlite3.connect(self.db_path) as conn:
             conn.row_factory = sqlite3.Row
             c = conn.cursor()
-            c.execute("SELECT id, username, is_admin FROM users")
+            c.execute("SELECT id, username, is_admin, first_name, last_name, email FROM users")
             return [dict(row) for row in c.fetchall()]
 
     def delete_user(self, user_id: int) -> bool:

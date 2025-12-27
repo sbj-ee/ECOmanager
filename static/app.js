@@ -331,10 +331,13 @@ async function loadUsers() {
         tr.style.borderBottom = '1px solid var(--border)';
         const isAdminIdx = u.is_admin ? '<span style="color:var(--success)">Admin</span>' : 'User';
         const deleteBtn = u.is_admin ? '' : `<button onclick="deleteUser(${u.id})" class="btn btn-danger" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;">Delete</button>`;
+        const fullName = [u.first_name, u.last_name].filter(Boolean).join(' ');
 
         tr.innerHTML = `
             <td style="padding: 0.5rem;">${u.id || ''}</td>
             <td style="padding: 0.5rem;">${u.username}</td>
+            <td style="padding: 0.5rem;">${fullName}</td>
+            <td style="padding: 0.5rem;">${u.email || ''}</td>
             <td style="padding: 0.5rem;">${isAdminIdx}</td>
             <td style="padding: 0.5rem;">${deleteBtn}</td>
         `;
@@ -362,17 +365,31 @@ async function handleAdminAddUser(e) {
     e.preventDefault();
     const userIn = document.getElementById('admin-new-user');
     const passIn = document.getElementById('admin-new-pass');
+    const firstIn = document.getElementById('admin-new-first');
+    const lastIn = document.getElementById('admin-new-last');
+    const emailIn = document.getElementById('admin-new-email');
+
+    const payload = {
+        username: userIn.value,
+        password: passIn.value,
+        first_name: firstIn.value,
+        last_name: lastIn.value,
+        email: emailIn.value
+    };
 
     try {
         const res = await fetch(`${API_URL}/register`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username: userIn.value, password: passIn.value })
+            body: JSON.stringify(payload)
         });
 
         if (res.ok) {
             userIn.value = '';
             passIn.value = '';
+            firstIn.value = '';
+            lastIn.value = '';
+            emailIn.value = '';
             loadUsers(); // Refresh list to see new user
         } else {
             const data = await res.json();
