@@ -1,6 +1,6 @@
 # ECOmanager
 
-A simple Engineering Change Order (ECO) management system built with Python and SQLite.
+A simple Engineering Change Order (ECO) management system built with Python, SQLite, and FastAPI, featuring a modern Web UI.
 
 ## Features
 
@@ -37,7 +37,20 @@ A simple Engineering Change Order (ECO) management system built with Python and 
     pip install -r requirements.txt
     ```
 
-## Usage
+## Web Interface
+The project includes a modern, dark-mode web interface for managing ECOs.
+
+1.  Start the API server: `uvicorn api:app --reload`
+2.  Open **http://127.0.0.1:8000** in your web browser.
+3.  **Register** a new account (or login if you already have one).
+4.  From the dashboard, you can:
+    -   Create new ECOs.
+    -   View ECO details and history.
+    -   Upload and view attachments.
+    -   Submit, Approve, or Reject ECOs.
+    -   Download PDF-ready Markdown reports.
+
+## Python Library Usage
 
 The core logic is in `eco_manager.py`. You can import the `ECO` class in your own scripts or application.
 
@@ -75,8 +88,6 @@ uvicorn api:app --reload
 
 The API will be available at `http://127.0.0.1:8000`. 
 Interactive documentation is available at `http://127.0.0.1:8000/docs`.
-
-**Web Interface**: Access the dashboard at `http://127.0.0.1:8000`.
 
 ### Authentication
 
