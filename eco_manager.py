@@ -367,7 +367,7 @@ class ECO:
                     f.write("| Filename | Uploaded By | Date |\n")
                     f.write("| --- | --- | --- |\n")
                     for att in data['attachments']:
-                        f.write(f"| {att['filename']} | {att['username']} | {att['uploaded_at']} |\n")
+                        f.write(f"| {att['filename']} | {att['uploaded_by']} | {att['uploaded_at']} |\n")
                 else:
                     f.write("No attachments.\n")
                 f.write("\n")
