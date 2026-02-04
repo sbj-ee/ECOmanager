@@ -76,22 +76,41 @@ function logout() {
 
 // Dashboard
 let searchTimeout = null;
+let currentPage = 0;
+
+function getPerPage() {
+    const el = document.getElementById('per-page');
+    return el ? parseInt(el.value, 10) : 50;
+}
 
 function initSearch() {
     const searchInput = document.getElementById('search-input');
     const statusFilter = document.getElementById('status-filter');
+    const perPage = document.getElementById('per-page');
     if (!searchInput) return;
 
     searchInput.addEventListener('input', () => {
         clearTimeout(searchTimeout);
+        currentPage = 0;
         searchTimeout = setTimeout(loadECOs, 300);
     });
-    statusFilter.addEventListener('change', loadECOs);
+    statusFilter.addEventListener('change', () => { currentPage = 0; loadECOs(); });
+    perPage.addEventListener('change', () => { currentPage = 0; loadECOs(); });
+}
+
+function changePage(direction) {
+    currentPage += direction;
+    if (currentPage < 0) currentPage = 0;
+    loadECOs();
 }
 
 async function loadECOs() {
     const token = localStorage.getItem('eco_token');
+    const limit = getPerPage();
+    const offset = currentPage * limit;
     const params = new URLSearchParams();
+    params.set('limit', limit);
+    params.set('offset', offset);
     const searchInput = document.getElementById('search-input');
     const statusFilter = document.getElementById('status-filter');
     if (searchInput && searchInput.value.trim()) {
@@ -100,8 +119,7 @@ async function loadECOs() {
     if (statusFilter && statusFilter.value) {
         params.set('status', statusFilter.value);
     }
-    const queryString = params.toString();
-    const url = queryString ? `${API_URL}/ecos?${queryString}` : `${API_URL}/ecos`;
+    const url = `${API_URL}/ecos?${params.toString()}`;
     const res = await fetch(url, {
         headers: { 'X-API-Token': token }
     });
@@ -150,6 +168,14 @@ async function loadECOs() {
         tr.append(tdId, tdTitle, tdStatus, tdDate, tdAction);
         tbody.appendChild(tr);
     });
+
+    // Update pagination controls
+    const prevBtn = document.getElementById('prev-btn');
+    const nextBtn = document.getElementById('next-btn');
+    const pageInfo = document.getElementById('page-info');
+    if (prevBtn) prevBtn.disabled = currentPage === 0;
+    if (nextBtn) nextBtn.disabled = list.length < limit;
+    if (pageInfo) pageInfo.textContent = `Page ${currentPage + 1}`;
 }
 
 function getStatusClass(status) {
