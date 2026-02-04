@@ -1,28 +1,39 @@
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException, BackgroundTasks, Depends, Header
+import logging
+import os
+
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException, BackgroundTasks, Depends, Header, Query
 from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
 import shutil
-import os
 from eco_manager import ECO
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 app = FastAPI(title="ECO Manager API")
 
 # Mount static files
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-# CORS (optional but good for dev)
+# CORS - configure via CORS_ORIGINS env var (comma-separated) for production
+cors_origins = os.environ.get("CORS_ORIGINS", "*").split(",")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-eco_system = ECO()
+MAX_UPLOAD_SIZE = int(os.environ.get("MAX_UPLOAD_SIZE", 10 * 1024 * 1024))  # 10MB default
+
+eco_system = ECO(
+    db_path=os.environ.get("DATABASE_PATH", "eco_system.db"),
+    attachments_dir=os.environ.get("ATTACHMENTS_DIR", "attachments"),
+)
 
 @app.get("/")
 def read_root():
@@ -103,9 +114,12 @@ def create_eco(item: ECOCreate, user: User = Depends(get_current_user)):
     return {"eco_id": eco_id, "message": "ECO created successfully"}
 
 @app.get("/ecos", response_model=List[ECOItem])
-def list_ecos(user: User = Depends(get_current_user)):
-    # Potentially filter by user if simple user? For now list all.
-    ecos = eco_system.list_ecos()
+def list_ecos(
+    user: User = Depends(get_current_user),
+    limit: int = Query(default=50, ge=1, le=200),
+    offset: int = Query(default=0, ge=0),
+):
+    ecos = eco_system.list_ecos(limit=limit, offset=offset)
     return [{"id": r[0], "title": r[1], "status": r[2], "created_at": r[3]} for r in ecos]
 
 @app.get("/ecos/{eco_id}")
@@ -140,19 +154,27 @@ def reject_eco(eco_id: int, action: ECOAction, user: User = Depends(get_current_
 
 @app.post("/ecos/{eco_id}/attachments")
 def add_attachment(eco_id: int, file: UploadFile = File(...), user: User = Depends(get_current_user)):
+    # Read file content and enforce size limit
+    content = file.file.read()
+    if len(content) > MAX_UPLOAD_SIZE:
+        raise HTTPException(
+            status_code=413,
+            detail=f"File too large. Maximum size is {MAX_UPLOAD_SIZE // (1024 * 1024)}MB",
+        )
+
     tmp_path = f"tmp_{file.filename}"
     try:
         with open(tmp_path, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
-            
+            buffer.write(content)
+
         success = eco_system.add_attachment(eco_id, file.filename, tmp_path, user.username)
-        
+
         if not success:
             raise HTTPException(status_code=400, detail="Failed to add attachment")
     finally:
         if os.path.exists(tmp_path):
             os.remove(tmp_path)
-            
+
     return {"message": "Attachment added"}
 
 @app.get("/ecos/{eco_id}/attachments/{filename}")
@@ -184,10 +206,9 @@ def list_users(admin: User = Depends(get_current_admin)):
 
 @app.delete("/admin/users/{user_id}")
 def delete_user(user_id: int, admin: User = Depends(get_current_admin)):
-    # Prevent self-deletion if desired, or allow (suicide).
-    # Ideally should get user_id from username to check self-deletion, but user_id is passed.
-    # We can fetch admin's ID if we want to prevent, but not strictly required.
+    if user_id == admin.id:
+        raise HTTPException(status_code=403, detail="Cannot delete your own account")
     success = eco_system.delete_user(user_id)
     if not success:
-        raise HTTPException(status_code=404, detail="User not found or deletion failed")
+        raise HTTPException(status_code=400, detail="User not found or is the last admin")
     return {"message": "User deleted"}

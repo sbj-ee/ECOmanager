@@ -196,3 +196,62 @@ def test_download_report_failures(auth_headers):
         resp = client.get(f"/ecos/{eco_id}/report", headers=auth_headers)
         assert resp.status_code == 500
         assert resp.json()["detail"] == "Failed to generate report"
+
+
+def test_admin_self_deletion(test_eco_system):
+    # Register admin (first user)
+    test_eco_system.register_user("selfadmin", "pw")
+    token = test_eco_system.generate_token("selfadmin", "pw")
+    headers = {"X-API-Token": token}
+
+    # Get admin's user id
+    resp = client.get("/admin/users", headers=headers)
+    admin_id = resp.json()[0]["id"]
+
+    # Try to self-delete
+    resp = client.delete(f"/admin/users/{admin_id}", headers=headers)
+    assert resp.status_code == 403
+    assert resp.json()["detail"] == "Cannot delete your own account"
+
+
+def test_last_admin_deletion(test_eco_system):
+    # Register admin (first user) and a second admin
+    test_eco_system.register_user("admin1", "pw")
+    test_eco_system.register_user("regular", "pw")
+    token = test_eco_system.generate_token("admin1", "pw")
+    headers = {"X-API-Token": token}
+
+    # Get regular user's id
+    resp = client.get("/admin/users", headers=headers)
+    users = resp.json()
+    regular = [u for u in users if u["username"] == "regular"][0]
+
+    # Can delete regular user
+    resp = client.delete(f"/admin/users/{regular['id']}", headers=headers)
+    assert resp.status_code == 200
+
+
+def test_pagination_query_params(auth_headers):
+    for i in range(5):
+        client.post("/ecos", json={"title": f"P{i}", "description": "D"}, headers=auth_headers)
+
+    resp = client.get("/ecos?limit=2", headers=auth_headers)
+    assert resp.status_code == 200
+    assert len(resp.json()) == 2
+
+    resp = client.get("/ecos?limit=10&offset=3", headers=auth_headers)
+    assert resp.status_code == 200
+    assert len(resp.json()) == 2
+
+
+def test_upload_size_limit(auth_headers, monkeypatch):
+    import api
+    monkeypatch.setattr(api, "MAX_UPLOAD_SIZE", 10)  # 10 bytes
+
+    resp = client.post("/ecos", json={"title": "Size", "description": "D"}, headers=auth_headers)
+    eco_id = resp.json()["eco_id"]
+
+    large_content = b"x" * 100
+    files = {"file": ("big.txt", large_content, "text/plain")}
+    resp = client.post(f"/ecos/{eco_id}/attachments", headers=auth_headers, files=files)
+    assert resp.status_code == 413

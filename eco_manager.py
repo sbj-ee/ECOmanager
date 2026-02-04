@@ -1,11 +1,15 @@
 import sqlite3
 import datetime
+import logging
+import mimetypes
 import os
 import shutil
 from typing import List, Optional, Tuple
 from pathlib import Path
 import secrets
 import bcrypt
+
+logger = logging.getLogger(__name__)
 
 class ECO:
     def __init__(self, db_path: str = "eco_system.db", attachments_dir: str = "attachments"):
@@ -70,30 +74,17 @@ class ECO:
                     FOREIGN KEY (user_id) REFERENCES users(id)
                 );
             """)
-            try:
-                c.execute("ALTER TABLE users ADD COLUMN password_hash TEXT")
-            except sqlite3.OperationalError:
-                pass
-            
-            try:
-                c.execute("ALTER TABLE users ADD COLUMN is_admin INTEGER DEFAULT 0")
-            except sqlite3.OperationalError:
-                pass
-
-            try:
-                c.execute("ALTER TABLE users ADD COLUMN first_name TEXT")
-            except sqlite3.OperationalError:
-                pass
-
-            try:
-                c.execute("ALTER TABLE users ADD COLUMN last_name TEXT")
-            except sqlite3.OperationalError:
-                pass
-
-            try:
-                c.execute("ALTER TABLE users ADD COLUMN email TEXT")
-            except sqlite3.OperationalError:
-                pass
+            for column, definition in [
+                ("password_hash", "TEXT"),
+                ("is_admin", "INTEGER DEFAULT 0"),
+                ("first_name", "TEXT"),
+                ("last_name", "TEXT"),
+                ("email", "TEXT"),
+            ]:
+                try:
+                    c.execute(f"ALTER TABLE users ADD COLUMN {column} {definition}")
+                except sqlite3.OperationalError:
+                    pass  # Column already exists
 
             conn.commit()
 
@@ -142,6 +133,7 @@ class ECO:
 
     def generate_token(self, username: str, password: str) -> Optional[str]:
         if not self.verify_password(username, password):
+            logger.warning("Failed login attempt for user '%s'", username)
             return None
             
         # User exists and password correct, get ID
@@ -178,17 +170,24 @@ class ECO:
         try:
             with sqlite3.connect(self.db_path) as conn:
                 c = conn.cursor()
-                # Deleting a user might cascade or fail if referenced.
-                # Assuming simple deletion for now, foreign keys might restrict.
-                # If foreign keys are enforced, we might need to handle ECOs created by them.
-                # But SQLite FK off by default unless PRAGMA foreign_keys = ON;
-                # Let's delete references first just to be safe/clean? 
-                # Or just delete user and let ECOs become orphans (created_by ID remains).
-                
-                # Check if trying to delete last admin? Maybe later.
+                # Check if user is the last admin
+                c.execute("SELECT is_admin FROM users WHERE id = ?", (user_id,))
+                row = c.fetchone()
+                if not row:
+                    return False
+                if row[0]:
+                    c.execute("SELECT COUNT(*) FROM users WHERE is_admin = 1")
+                    admin_count = c.fetchone()[0]
+                    if admin_count <= 1:
+                        logger.warning("Attempted to delete the last admin user (id=%d)", user_id)
+                        return False
+                # Clean up user's API tokens
+                c.execute("DELETE FROM api_tokens WHERE user_id = ?", (user_id,))
                 c.execute("DELETE FROM users WHERE id = ?", (user_id,))
+                logger.info("Deleted user id=%d", user_id)
                 return c.rowcount > 0
         except sqlite3.Error:
+            logger.exception("Failed to delete user id=%d", user_id)
             return False
 
     def create_eco(self, title: str, description: str, username: str) -> int:
@@ -272,7 +271,7 @@ class ECO:
             shutil.copy2(src_path, dest_path)
 
             file_size = dest_path.stat().st_size
-            mime_type = "application/octet-stream"  # improve with mimetypes if needed
+            mime_type = mimetypes.guess_type(safe_filename)[0] or "application/octet-stream"
 
             with sqlite3.connect(self.db_path) as conn:
                 c = conn.cursor()
@@ -282,7 +281,8 @@ class ECO:
                 """, (eco_id, safe_filename, mime_type, str(dest_path), file_size, user_id, now))
                 conn.commit()
             return True
-        except Exception:
+        except (OSError, sqlite3.Error):
+            logger.exception("Failed to add attachment '%s' to ECO %d", filename, eco_id)
             return False
 
     def get_attachment_path(self, eco_id: int, filename: str) -> Optional[str]:
@@ -323,10 +323,13 @@ class ECO:
             eco['attachments'] = [dict(r) for r in c.fetchall()]
             return eco
 
-    def list_ecos(self) -> List[Tuple[int, str, str, str]]:
+    def list_ecos(self, limit: int = 50, offset: int = 0) -> List[Tuple[int, str, str, str]]:
         with sqlite3.connect(self.db_path) as conn:
             c = conn.cursor()
-            c.execute("SELECT id, title, status, created_at FROM ecos ORDER BY created_at DESC")
+            c.execute(
+                "SELECT id, title, status, created_at FROM ecos ORDER BY created_at DESC LIMIT ? OFFSET ?",
+                (limit, offset),
+            )
             return c.fetchall()
 
     def generate_report(self, eco_id: int, output_file: str) -> bool:

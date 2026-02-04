@@ -90,22 +90,51 @@ async function loadECOs() {
     list.forEach(eco => {
         const tr = document.createElement('tr');
         tr.style.borderBottom = '1px solid var(--border)';
-        tr.innerHTML = `
-            <td style="padding: 1rem;">#${eco.id}</td>
-            <td style="padding: 1rem; font-weight: 600;">${eco.title}</td>
-            <td style="padding: 1rem;"><span class="badge ${getStatusClass(eco.status)}">${eco.status}</span></td>
-            <td style="padding: 1rem; color: var(--text-muted);">${new Date(eco.created_at).toLocaleDateString()}</td>
-            <td style="padding: 1rem;">
-                <button onclick="openDetail(${eco.id})" class="btn btn-primary" style="padding: 0.5rem 1rem; font-size: 0.8rem;">View</button>
-            </td>
-        `;
+
+        const tdId = document.createElement('td');
+        tdId.style.padding = '1rem';
+        tdId.textContent = `#${eco.id}`;
+
+        const tdTitle = document.createElement('td');
+        tdTitle.style.padding = '1rem';
+        tdTitle.style.fontWeight = '600';
+        tdTitle.textContent = eco.title;
+
+        const tdStatus = document.createElement('td');
+        tdStatus.style.padding = '1rem';
+        const badge = document.createElement('span');
+        badge.className = `badge ${getStatusClass(eco.status)}`;
+        badge.textContent = eco.status;
+        tdStatus.appendChild(badge);
+
+        const tdDate = document.createElement('td');
+        tdDate.style.padding = '1rem';
+        tdDate.style.color = 'var(--text-muted)';
+        tdDate.textContent = new Date(eco.created_at).toLocaleDateString();
+
+        const tdAction = document.createElement('td');
+        tdAction.style.padding = '1rem';
+        const viewBtn = document.createElement('button');
+        viewBtn.className = 'btn btn-primary';
+        viewBtn.style.padding = '0.5rem 1rem';
+        viewBtn.style.fontSize = '0.8rem';
+        viewBtn.textContent = 'View';
+        viewBtn.onclick = () => openDetail(eco.id);
+        tdAction.appendChild(viewBtn);
+
+        tr.append(tdId, tdTitle, tdStatus, tdDate, tdAction);
         tbody.appendChild(tr);
     });
 }
 
 function getStatusClass(status) {
-    // Just returning status for now, could act as class name hook
-    return '';
+    switch (status) {
+        case 'DRAFT': return 'badge-draft';
+        case 'SUBMITTED': return 'badge-submitted';
+        case 'APPROVED': return 'badge-approved';
+        case 'REJECTED': return 'badge-rejected';
+        default: return '';
+    }
 }
 
 // Create
@@ -164,19 +193,37 @@ async function openDetail(id) {
     fileList.innerHTML = '';
     data.attachments.forEach(f => {
         const li = document.createElement('li');
-        li.innerHTML = `<a href="#" onclick="viewAttachment('${f.filename}'); return false;">📎 ${f.filename}</a> <span style="color: var(--text-muted); font-size: 0.9em;">(${f.uploaded_by})</span>`;
         li.style.marginBottom = '0.5rem';
+        const link = document.createElement('a');
+        link.href = '#';
+        link.textContent = f.filename;
+        link.onclick = (e) => { e.preventDefault(); viewAttachment(f.filename); };
+        const uploader = document.createElement('span');
+        uploader.style.color = 'var(--text-muted)';
+        uploader.style.fontSize = '0.9em';
+        uploader.textContent = ` (${f.uploaded_by})`;
+        li.append(link, uploader);
         fileList.appendChild(li);
     });
 
     // History
     const historyDiv = document.getElementById('detail-history');
-    historyDiv.innerHTML = data.history.map(h =>
-        `<div style="margin-bottom: 0.5rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border);">
-            <strong>${h.action}</strong> by ${h.performed_by} at ${new Date(h.performed_at).toLocaleString()}
-            ${h.comment ? `<br><em>"${h.comment}"</em>` : ''}
-         </div>`
-    ).join('');
+    historyDiv.innerHTML = '';
+    data.history.forEach(h => {
+        const entry = document.createElement('div');
+        entry.style.cssText = 'margin-bottom: 0.5rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border);';
+        const actionEl = document.createElement('strong');
+        actionEl.textContent = h.action;
+        const infoText = document.createTextNode(` by ${h.username} at ${new Date(h.performed_at).toLocaleString()}`);
+        entry.append(actionEl, infoText);
+        if (h.comment) {
+            entry.appendChild(document.createElement('br'));
+            const commentEl = document.createElement('em');
+            commentEl.textContent = `"${h.comment}"`;
+            entry.appendChild(commentEl);
+        }
+        historyDiv.appendChild(entry);
+    });
 
     // Actions
     const actionsDiv = document.getElementById('actions-area');
@@ -329,18 +376,48 @@ async function loadUsers() {
     users.forEach(u => {
         const tr = document.createElement('tr');
         tr.style.borderBottom = '1px solid var(--border)';
-        const isAdminIdx = u.is_admin ? '<span style="color:var(--success)">Admin</span>' : 'User';
-        const deleteBtn = u.is_admin ? '' : `<button onclick="deleteUser(${u.id})" class="btn btn-danger" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;">Delete</button>`;
         const fullName = [u.first_name, u.last_name].filter(Boolean).join(' ');
+        const cellStyle = 'padding: 0.5rem;';
 
-        tr.innerHTML = `
-            <td style="padding: 0.5rem;">${u.id || ''}</td>
-            <td style="padding: 0.5rem;">${u.username}</td>
-            <td style="padding: 0.5rem;">${fullName}</td>
-            <td style="padding: 0.5rem;">${u.email || ''}</td>
-            <td style="padding: 0.5rem;">${isAdminIdx}</td>
-            <td style="padding: 0.5rem;">${deleteBtn}</td>
-        `;
+        const cells = [
+            u.id || '',
+            u.username,
+            fullName,
+            u.email || '',
+        ];
+        cells.forEach(text => {
+            const td = document.createElement('td');
+            td.style.cssText = cellStyle;
+            td.textContent = text;
+            tr.appendChild(td);
+        });
+
+        // Role cell
+        const roleTd = document.createElement('td');
+        roleTd.style.cssText = cellStyle;
+        if (u.is_admin) {
+            const roleSpan = document.createElement('span');
+            roleSpan.style.color = 'var(--success)';
+            roleSpan.textContent = 'Admin';
+            roleTd.appendChild(roleSpan);
+        } else {
+            roleTd.textContent = 'User';
+        }
+        tr.appendChild(roleTd);
+
+        // Delete cell
+        const actionTd = document.createElement('td');
+        actionTd.style.cssText = cellStyle;
+        if (!u.is_admin) {
+            const delBtn = document.createElement('button');
+            delBtn.className = 'btn btn-danger';
+            delBtn.style.cssText = 'padding: 0.25rem 0.5rem; font-size: 0.8rem;';
+            delBtn.textContent = 'Delete';
+            delBtn.onclick = () => deleteUser(u.id);
+            actionTd.appendChild(delBtn);
+        }
+        tr.appendChild(actionTd);
+
         tbody.appendChild(tr);
     });
 }

@@ -138,3 +138,34 @@ select:focus {
 .animate-fade-in {
     animation: fadeIn 0.4s ease-out forwards;
 }
+
+/* Status Badges */
+.badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.badge-draft {
+    background: rgba(148, 163, 184, 0.2);
+    color: var(--text-muted);
+}
+
+.badge-submitted {
+    background: rgba(245, 158, 11, 0.2);
+    color: var(--warning);
+}
+
+.badge-approved {
+    background: rgba(16, 185, 129, 0.2);
+    color: var(--success);
+}
+
+.badge-rejected {
+    background: rgba(239, 68, 68, 0.2);
+    color: var(--danger);
+}

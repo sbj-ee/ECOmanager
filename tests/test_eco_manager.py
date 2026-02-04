@@ -173,7 +173,63 @@ def test_generate_report_no_data(eco_system, tmp_path):
 def test_verify_password_edge_cases(eco_system):
     # Non-existent user
     assert eco_system.verify_password("ghost", "pass") is False
-    
+
     # User without password (simulated legacy user)
     eco_system.get_or_create_user("legacy") # Creates user with NULL password
     assert eco_system.verify_password("legacy", "pass") is False
+
+
+def test_delete_last_admin(eco_system):
+    eco_system.register_user("admin1", "pw")  # First user is auto-admin
+    # Verify the user is admin
+    users = eco_system.get_all_users()
+    admin = [u for u in users if u['is_admin']][0]
+    # Cannot delete last admin
+    assert eco_system.delete_user(admin['id']) is False
+
+
+def test_delete_non_admin_user(eco_system):
+    eco_system.register_user("admin1", "pw")  # auto-admin
+    eco_system.register_user("regular", "pw")
+    users = eco_system.get_all_users()
+    regular = [u for u in users if not u['is_admin']][0]
+    assert eco_system.delete_user(regular['id']) is True
+
+
+def test_token_cleanup_on_user_delete(eco_system):
+    eco_system.register_user("admin1", "pw")  # auto-admin
+    eco_system.register_user("doomed", "pw")
+    token = eco_system.generate_token("doomed", "pw")
+    assert eco_system.get_user_from_token(token) is not None
+    users = eco_system.get_all_users()
+    doomed = [u for u in users if u['username'] == 'doomed'][0]
+    eco_system.delete_user(doomed['id'])
+    # Token should be invalidated
+    assert eco_system.get_user_from_token(token) is None
+
+
+def test_list_ecos_pagination(eco_system):
+    for i in range(5):
+        eco_system.create_eco(f"ECO {i}", "D", "user")
+
+    # Default gets all (limit 50 > 5)
+    assert len(eco_system.list_ecos()) == 5
+
+    # Limit
+    assert len(eco_system.list_ecos(limit=2)) == 2
+
+    # Offset
+    assert len(eco_system.list_ecos(limit=10, offset=3)) == 2
+
+
+def test_delete_nonexistent_user(eco_system):
+    assert eco_system.delete_user(999) is False
+
+
+def test_mime_type_detection(eco_system, tmp_path):
+    eco_id = eco_system.create_eco("MIME Test", "Desc", "user1")
+    source_file = tmp_path / "test.pdf"
+    source_file.write_bytes(b"%PDF-1.4 dummy")
+    eco_system.add_attachment(eco_id, "test.pdf", str(source_file), "user1")
+    details = eco_system.get_eco_details(eco_id)
+    assert details['attachments'][0]['mime_type'] == 'application/pdf'

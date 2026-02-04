@@ -4,5 +4,4 @@ fastapi
 uvicorn
 httpx
 python-multipart
-passlib
 bcrypt
