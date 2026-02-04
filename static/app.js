@@ -276,6 +276,27 @@ async function openDetail(id) {
         actionsDiv.appendChild(rejectBtn);
     }
 
+    // Admin actions: Edit and Delete
+    if (localStorage.getItem('eco_is_admin') === 'true') {
+        const sep = document.createElement('hr');
+        sep.style.cssText = 'border: 0; border-top: 1px solid var(--border); margin: 0.75rem 0;';
+        actionsDiv.appendChild(sep);
+
+        const editBtn = document.createElement('button');
+        editBtn.className = 'btn';
+        editBtn.style.cssText = 'background: rgba(255,255,255,0.1); border: 1px solid var(--border); width: 100%; margin-bottom: 0.5rem;';
+        editBtn.textContent = 'Edit ECO';
+        editBtn.onclick = () => openEditModal(data);
+        actionsDiv.appendChild(editBtn);
+
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'btn btn-danger';
+        deleteBtn.style.width = '100%';
+        deleteBtn.textContent = 'Delete ECO';
+        deleteBtn.onclick = () => handleDeleteECO(data.id);
+        actionsDiv.appendChild(deleteBtn);
+    }
+
     document.getElementById('detail-modal').classList.remove('hidden');
 }
 
@@ -306,6 +327,57 @@ async function performAction(action, requireComment = false) {
     } else {
         const d = await res.json();
         alert(d.detail || 'Action failed');
+    }
+}
+
+function openEditModal(data) {
+    document.getElementById('edit-eco-title').value = data.title;
+    document.getElementById('edit-eco-desc').value = data.description;
+    document.getElementById('edit-modal').classList.remove('hidden');
+}
+
+function hideEditModal() {
+    document.getElementById('edit-modal').classList.add('hidden');
+}
+
+async function handleEditECO(e) {
+    e.preventDefault();
+    const title = document.getElementById('edit-eco-title').value;
+    const desc = document.getElementById('edit-eco-desc').value;
+    const token = localStorage.getItem('eco_token');
+
+    const res = await fetch(`${API_URL}/ecos/${currentEcoId}`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-API-Token': token
+        },
+        body: JSON.stringify({ title: title, description: desc })
+    });
+
+    if (res.ok) {
+        hideEditModal();
+        openDetail(currentEcoId);
+    } else {
+        const d = await res.json();
+        alert(d.detail || 'Failed to update ECO');
+    }
+}
+
+async function handleDeleteECO(ecoId) {
+    if (!confirm('Are you sure you want to permanently delete this ECO? This cannot be undone.')) return;
+
+    const token = localStorage.getItem('eco_token');
+    const res = await fetch(`${API_URL}/ecos/${ecoId}`, {
+        method: 'DELETE',
+        headers: { 'X-API-Token': token }
+    });
+
+    if (res.ok) {
+        hideDetailModal();
+    } else {
+        const d = await res.json();
+        alert(d.detail || 'Failed to delete ECO');
     }
 }
 
@@ -514,7 +586,7 @@ function hideHelp() {
 // Close modals on Escape key
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
-        document.querySelectorAll('#help-modal, #detail-modal, #create-modal, #admin-modal').forEach(modal => {
+        document.querySelectorAll('#help-modal, #edit-modal, #detail-modal, #create-modal, #admin-modal').forEach(modal => {
             modal.classList.add('hidden');
         });
     }

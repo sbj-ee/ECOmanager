@@ -60,6 +60,39 @@ def test_invalid_transitions(eco_system):
     assert eco_system.reject_eco(eco_id, "admin", "No") is False
 
 
+def test_update_eco(eco_system):
+    eco_id = eco_system.create_eco("Original", "Original desc", "user1")
+    assert eco_system.update_eco(eco_id, "Updated", "New desc", "user1") is True
+    details = eco_system.get_eco_details(eco_id)
+    assert details['title'] == "Updated"
+    assert details['description'] == "New desc"
+    # Should have EDITED in history
+    assert any(h['action'] == 'EDITED' for h in details['history'])
+
+
+def test_update_nonexistent_eco(eco_system):
+    assert eco_system.update_eco(999, "X", "Y", "user1") is False
+
+
+def test_delete_eco(eco_system):
+    eco_id = eco_system.create_eco("Delete Me", "Desc", "user1")
+    assert eco_system.delete_eco(eco_id) is True
+    assert eco_system.get_eco_details(eco_id) is None
+
+
+def test_delete_eco_with_attachments(eco_system, tmp_path):
+    eco_id = eco_system.create_eco("With Attach", "Desc", "user1")
+    source = tmp_path / "file.txt"
+    source.write_text("content")
+    eco_system.add_attachment(eco_id, "file.txt", str(source), "user1")
+    assert eco_system.delete_eco(eco_id) is True
+    assert eco_system.get_eco_details(eco_id) is None
+
+
+def test_delete_nonexistent_eco(eco_system):
+    assert eco_system.delete_eco(999) is False
+
+
 def test_cannot_submit_twice(eco_system):
     eco_id = eco_system.create_eco("Double Submit", "Desc", "user1")
     assert eco_system.submit_eco(eco_id, "user1") is True

@@ -19,9 +19,10 @@
                 style="background: rgba(255,100,100,0.2); border: 1px solid var(--danger); color: var(--danger);">Admin
                 Panel</button>
             <button onclick="openHelp()" class="btn"
-                style="background: rgba(255,255,255,0.1);">Help</button>
+                style="background: rgba(245,158,11,0.2); border: 1px solid var(--warning); color: var(--warning);">Help</button>
             <span id="user-display" style="color: var(--text-muted);"></span>
-            <button onclick="logout()" class="btn" style="background: rgba(255,255,255,0.1);">Logout</button>
+            <button onclick="logout()" class="btn"
+                style="background: rgba(251,146,60,0.2); border: 1px solid #fb923c; color: #fb923c;">Logout</button>
         </div>
     </nav>
 
@@ -188,6 +189,27 @@
                 <tbody id="user-list">
                 </tbody>
             </table>
+        </div>
+    </div>
+
+    <!-- Edit ECO Modal -->
+    <div id="edit-modal" class="hidden"
+        style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); display: flex; justify-content: center; align-items: center; z-index: 200;">
+        <div class="glass-card" style="width: 500px; max-width: 90%;">
+            <h2>Edit ECO</h2>
+            <form onsubmit="handleEditECO(event)">
+                <label>Title</label>
+                <input type="text" id="edit-eco-title" required>
+
+                <label>Description</label>
+                <textarea id="edit-eco-desc" rows="4" required></textarea>
+
+                <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 1rem;">
+                    <button type="button" onclick="hideEditModal()" class="btn"
+                        style="background: transparent; border: 1px solid var(--border);">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
         </div>
     </div>
 

@@ -220,6 +220,42 @@ class ECO:
             conn.commit()
             return eco_id
 
+    def update_eco(self, eco_id: int, title: str, description: str, username: str) -> bool:
+        user_id = self.get_or_create_user(username)
+        now = datetime.datetime.now().isoformat()
+        with sqlite3.connect(self.db_path) as conn:
+            c = conn.cursor()
+            c.execute("SELECT id FROM ecos WHERE id = ?", (eco_id,))
+            if not c.fetchone():
+                return False
+            c.execute(
+                "UPDATE ecos SET title = ?, description = ?, updated_at = ? WHERE id = ?",
+                (title, description, now, eco_id),
+            )
+            c.execute("""
+                INSERT INTO eco_history (eco_id, action, comment, performed_by, performed_at)
+                VALUES (?, 'EDITED', ?, ?, ?)
+            """, (eco_id, f"Title: {title}", user_id, now))
+            conn.commit()
+            return True
+
+    def delete_eco(self, eco_id: int) -> bool:
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                c = conn.cursor()
+                c.execute("SELECT id FROM ecos WHERE id = ?", (eco_id,))
+                if not c.fetchone():
+                    return False
+                c.execute("DELETE FROM eco_history WHERE eco_id = ?", (eco_id,))
+                c.execute("DELETE FROM attachments WHERE eco_id = ?", (eco_id,))
+                c.execute("DELETE FROM ecos WHERE id = ?", (eco_id,))
+                conn.commit()
+                logger.info("Deleted ECO id=%d", eco_id)
+                return True
+        except sqlite3.Error:
+            logger.exception("Failed to delete ECO id=%d", eco_id)
+            return False
+
     def submit_eco(self, eco_id: int, username: str, comment: Optional[str] = None) -> bool:
         user_id = self.get_or_create_user(username)
         now = datetime.datetime.now().isoformat()

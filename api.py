@@ -143,6 +143,20 @@ def get_eco(eco_id: int, user: User = Depends(get_current_user)):
         raise HTTPException(status_code=404, detail="ECO not found")
     return details
 
+@app.put("/ecos/{eco_id}")
+def update_eco(eco_id: int, item: ECOCreate, admin: User = Depends(get_current_admin)):
+    success = eco_system.update_eco(eco_id, item.title, item.description, admin.username)
+    if not success:
+        raise HTTPException(status_code=404, detail="ECO not found")
+    return {"message": "ECO updated"}
+
+@app.delete("/ecos/{eco_id}")
+def delete_eco(eco_id: int, admin: User = Depends(get_current_admin)):
+    success = eco_system.delete_eco(eco_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="ECO not found")
+    return {"message": "ECO deleted"}
+
 @app.post("/ecos/{eco_id}/submit")
 def submit_eco(eco_id: int, action: ECOAction, user: User = Depends(get_current_user)):
     success = eco_system.submit_eco(eco_id, user.username, action.comment)

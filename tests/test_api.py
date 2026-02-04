@@ -252,6 +252,61 @@ def test_search_ecos_via_api(auth_headers):
     assert len(resp.json()) == 0
 
 
+def test_edit_eco_via_api(auth_headers):
+    # auth_headers user is auto-admin (first registered)
+    resp = client.post("/ecos", json={"title": "Before", "description": "Old"}, headers=auth_headers)
+    eco_id = resp.json()["eco_id"]
+
+    resp = client.put(f"/ecos/{eco_id}", json={"title": "After", "description": "New"}, headers=auth_headers)
+    assert resp.status_code == 200
+
+    resp = client.get(f"/ecos/{eco_id}", headers=auth_headers)
+    assert resp.json()["title"] == "After"
+    assert resp.json()["description"] == "New"
+
+
+def test_edit_eco_nonexistent(auth_headers):
+    resp = client.put("/ecos/999", json={"title": "X", "description": "Y"}, headers=auth_headers)
+    assert resp.status_code == 404
+
+
+def test_delete_eco_via_api(auth_headers):
+    resp = client.post("/ecos", json={"title": "Gone", "description": "D"}, headers=auth_headers)
+    eco_id = resp.json()["eco_id"]
+
+    resp = client.delete(f"/ecos/{eco_id}", headers=auth_headers)
+    assert resp.status_code == 200
+
+    resp = client.get(f"/ecos/{eco_id}", headers=auth_headers)
+    assert resp.status_code == 404
+
+
+def test_delete_eco_nonexistent(auth_headers):
+    resp = client.delete("/ecos/999", headers=auth_headers)
+    assert resp.status_code == 404
+
+
+def test_edit_eco_requires_admin(test_eco_system):
+    test_eco_system.register_user("adminuser", "pw")
+    test_eco_system.register_user("regularuser", "pw")
+    admin_token = test_eco_system.generate_token("adminuser", "pw")
+    user_token = test_eco_system.generate_token("regularuser", "pw")
+
+    # Create ECO as admin
+    resp = client.post("/ecos", json={"title": "T", "description": "D"},
+                       headers={"X-API-Token": admin_token})
+    eco_id = resp.json()["eco_id"]
+
+    # Regular user cannot edit
+    resp = client.put(f"/ecos/{eco_id}", json={"title": "X", "description": "Y"},
+                      headers={"X-API-Token": user_token})
+    assert resp.status_code == 403
+
+    # Regular user cannot delete
+    resp = client.delete(f"/ecos/{eco_id}", headers={"X-API-Token": user_token})
+    assert resp.status_code == 403
+
+
 def test_filter_status_via_api(auth_headers):
     resp = client.post("/ecos", json={"title": "FilterTest", "description": "D"}, headers=auth_headers)
     eco_id = resp.json()["eco_id"]
