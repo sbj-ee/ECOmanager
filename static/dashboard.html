@@ -18,6 +18,8 @@
             <button id="admin-btn" onclick="openAdmin()" class="btn hidden"
                 style="background: rgba(255,100,100,0.2); border: 1px solid var(--danger); color: var(--danger);">Admin
                 Panel</button>
+            <button onclick="openHelp()" class="btn"
+                style="background: rgba(255,255,255,0.1);">Help</button>
             <span id="user-display" style="color: var(--text-muted);"></span>
             <button onclick="logout()" class="btn" style="background: rgba(255,255,255,0.1);">Logout</button>
         </div>
@@ -174,6 +176,76 @@
                 <tbody id="user-list">
                 </tbody>
             </table>
+        </div>
+    </div>
+
+    <!-- Help Modal -->
+    <div id="help-modal" class="hidden"
+        style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); overflow-y: auto; z-index: 100;">
+        <div class="glass-card" style="width: 800px; max-width: 95%; margin: 5vh auto;">
+            <div style="display: flex; justify-content: space-between; align-items: start;">
+                <h2>Help</h2>
+                <button onclick="hideHelp()"
+                    style="background:none; border:none; color: white; font-size: 1.5rem; cursor:pointer;">&times;</button>
+            </div>
+
+            <div style="color: var(--text-muted); line-height: 1.8;">
+                <h3 style="color: var(--text-main); margin-top: 1.5rem;">Getting Started</h3>
+                <p>ECO Manager helps you track Engineering Change Orders through their full lifecycle.
+                   From the dashboard you can create, review, approve, and reject ECOs.</p>
+
+                <h3 style="color: var(--text-main); margin-top: 1.5rem;">ECO Lifecycle</h3>
+                <p>Every ECO follows a defined workflow:</p>
+                <ol style="padding-left: 1.5rem;">
+                    <li><strong style="color: var(--text-main);">Draft</strong> &mdash; A new ECO starts in Draft status. You can edit it and attach files before submitting.</li>
+                    <li><strong style="color: var(--text-main);">Submitted</strong> &mdash; Click <em>Submit for Approval</em> to send the ECO for review. Once submitted, it awaits a decision.</li>
+                    <li><strong style="color: var(--text-main);">Approved</strong> &mdash; A reviewer approves the ECO. This is a final state.</li>
+                    <li><strong style="color: var(--text-main);">Rejected</strong> &mdash; A reviewer rejects the ECO with a required comment explaining why. This is a final state.</li>
+                </ol>
+
+                <h3 style="color: var(--text-main); margin-top: 1.5rem;">Creating an ECO</h3>
+                <p>Click the <strong style="color: var(--primary);">+ New ECO</strong> button at the top of the dashboard.
+                   Provide a title and description, then click Create. Your new ECO will appear in the list with Draft status.</p>
+
+                <h3 style="color: var(--text-main); margin-top: 1.5rem;">Viewing ECO Details</h3>
+                <p>Click the <strong style="color: var(--primary);">View</strong> button on any ECO row to open its detail panel. From here you can:</p>
+                <ul style="padding-left: 1.5rem;">
+                    <li>Read the full description</li>
+                    <li>View and download attached files</li>
+                    <li>See the complete action history with timestamps and comments</li>
+                    <li>Perform actions (Submit, Approve, Reject) based on the current status</li>
+                </ul>
+
+                <h3 style="color: var(--text-main); margin-top: 1.5rem;">Attachments</h3>
+                <p>In the ECO detail view, click <strong>Choose File</strong> to attach a document.
+                   Files are uploaded immediately. Click any attachment name to view or download it.
+                   Maximum file size is 10 MB.</p>
+
+                <h3 style="color: var(--text-main); margin-top: 1.5rem;">Reports</h3>
+                <p>Click <strong style="color: var(--success);">Download Report</strong> in the ECO detail view to generate
+                   a Markdown report containing the ECO description, attachments list, and full action history.</p>
+
+                <h3 style="color: var(--text-main); margin-top: 1.5rem;">Status Badges</h3>
+                <div style="display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 0.5rem;">
+                    <span class="badge badge-draft">DRAFT</span>
+                    <span class="badge badge-submitted">SUBMITTED</span>
+                    <span class="badge badge-approved">APPROVED</span>
+                    <span class="badge badge-rejected">REJECTED</span>
+                </div>
+                <p style="margin-top: 0.5rem;">These colored badges indicate the current state of each ECO at a glance.</p>
+
+                <h3 style="color: var(--text-main); margin-top: 1.5rem;">Admin Panel</h3>
+                <p>If you are an admin, the <strong style="color: var(--danger);">Admin Panel</strong> button appears in the top bar.
+                   From there you can view all registered users, add new users, and delete non-admin accounts.
+                   The first user to register is automatically granted admin privileges.</p>
+
+                <h3 style="color: var(--text-main); margin-top: 1.5rem;">Keyboard Shortcuts</h3>
+                <p>Press <kbd style="background: rgba(255,255,255,0.1); padding: 0.15rem 0.4rem; border-radius: 4px; border: 1px solid var(--border);">Esc</kbd> to close any open modal or dialog.</p>
+            </div>
+
+            <div style="margin-top: 2rem; text-align: right;">
+                <button onclick="hideHelp()" class="btn btn-primary">Got it</button>
+            </div>
         </div>
     </div>
 

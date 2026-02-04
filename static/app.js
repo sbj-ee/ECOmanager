@@ -476,3 +476,21 @@ async function handleAdminAddUser(e) {
         alert("Connection error");
     }
 }
+
+// Help
+function openHelp() {
+    document.getElementById('help-modal').classList.remove('hidden');
+}
+
+function hideHelp() {
+    document.getElementById('help-modal').classList.add('hidden');
+}
+
+// Close modals on Escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        document.querySelectorAll('#help-modal, #detail-modal, #create-modal, #admin-modal').forEach(modal => {
+            modal.classList.add('hidden');
+        });
+    }
+});
