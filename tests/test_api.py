@@ -250,3 +250,32 @@ def test_upload_size_limit(auth_headers, monkeypatch):
     files = {"file": ("big.txt", large_content, "text/plain")}
     resp = client.post(f"/ecos/{eco_id}/attachments", headers=auth_headers, files=files)
     assert resp.status_code == 413
+
+
+def test_health_check():
+    resp = client.get("/health")
+    assert resp.status_code == 200
+    assert resp.json() == {"status": "ok"}
+
+
+def test_logout(test_eco_system):
+    test_eco_system.register_user("logoutuser", "pw")
+    token = test_eco_system.generate_token("logoutuser", "pw")
+    headers = {"X-API-Token": token}
+
+    # Verify token works
+    resp = client.get("/ecos", headers=headers)
+    assert resp.status_code == 200
+
+    # Logout
+    resp = client.post("/logout", headers=headers)
+    assert resp.status_code == 200
+
+    # Token should be revoked
+    resp = client.get("/ecos", headers=headers)
+    assert resp.status_code == 401
+
+
+def test_logout_invalid_token():
+    resp = client.post("/logout", headers={"X-API-Token": "bogus"})
+    assert resp.status_code == 401

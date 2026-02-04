@@ -40,6 +40,10 @@ eco_system = ECO(
 def read_root():
     return RedirectResponse(url="/static/index.html")
 
+@app.get("/health")
+def health_check():
+    return {"status": "ok"}
+
 # Models
 class User(BaseModel):
     id: int
@@ -108,6 +112,13 @@ def generate_token(req: TokenRequest):
     is_admin = bool(user_data['is_admin']) if user_data else False
     
     return {"token": token, "is_admin": is_admin}
+
+@app.post("/logout")
+def logout(x_api_token: str = Header(...)):
+    revoked = eco_system.revoke_token(x_api_token)
+    if not revoked:
+        raise HTTPException(status_code=401, detail="Invalid API Token")
+    return {"message": "Logged out successfully"}
 
 @app.post("/ecos", response_model=Dict[str, Any], status_code=201)
 def create_eco(item: ECOCreate, user: User = Depends(get_current_user)):

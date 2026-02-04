@@ -36,6 +36,13 @@ Open **http://127.0.0.1:8000** and register your first account (automatically ge
 gunicorn api:app -k uvicorn.workers.UvicornWorker -w 4 -b 0.0.0.0:8000
 ```
 
+### Docker
+
+```bash
+docker build -t ecomanager .
+docker run -p 8000:8000 -v eco_data:/app/attachments ecomanager
+```
+
 ## Configuration
 
 All settings are optional environment variables with sensible defaults:
@@ -101,8 +108,10 @@ curl http://127.0.0.1:8000/ecos \
 
 | Method | Path | Description |
 | --- | --- | --- |
+| `GET` | `/health` | Health check (no auth required) |
 | `POST` | `/register` | Register a new user |
 | `POST` | `/token` | Generate an API token |
+| `POST` | `/logout` | Revoke current API token |
 | `GET` | `/ecos` | List ECOs (supports `?limit=` and `?offset=`) |
 | `POST` | `/ecos` | Create a new ECO |
 | `GET` | `/ecos/{id}` | Get ECO details, history, and attachments |

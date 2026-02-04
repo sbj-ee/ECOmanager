@@ -189,6 +189,16 @@ def test_verify_password_edge_cases(eco_system):
     assert eco_system.verify_password("legacy", "pass") is False
 
 
+def test_revoke_token(eco_system):
+    eco_system.register_user("revoker", "pw")
+    token = eco_system.generate_token("revoker", "pw")
+    assert eco_system.get_user_from_token(token) is not None
+    assert eco_system.revoke_token(token) is True
+    assert eco_system.get_user_from_token(token) is None
+    # Revoking again returns False
+    assert eco_system.revoke_token(token) is False
+
+
 def test_delete_last_admin(eco_system):
     eco_system.register_user("admin1", "pw")  # First user is auto-admin
     # Verify the user is admin

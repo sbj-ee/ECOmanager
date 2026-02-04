@@ -73,6 +73,12 @@ class ECO:
                     created_at TEXT NOT NULL,
                     FOREIGN KEY (user_id) REFERENCES users(id)
                 );
+
+                CREATE INDEX IF NOT EXISTS idx_ecos_status ON ecos(status);
+                CREATE INDEX IF NOT EXISTS idx_ecos_created_by ON ecos(created_by);
+                CREATE INDEX IF NOT EXISTS idx_eco_history_eco_id ON eco_history(eco_id);
+                CREATE INDEX IF NOT EXISTS idx_attachments_eco_id ON attachments(eco_id);
+                CREATE INDEX IF NOT EXISTS idx_api_tokens_user_id ON api_tokens(user_id);
             """)
             for column, definition in [
                 ("password_hash", "TEXT"),
@@ -158,6 +164,13 @@ class ECO:
             """, (token,))
             row = c.fetchone()
             return dict(row) if row else None
+
+    def revoke_token(self, token: str) -> bool:
+        with sqlite3.connect(self.db_path) as conn:
+            c = conn.cursor()
+            c.execute("DELETE FROM api_tokens WHERE token = ?", (token,))
+            conn.commit()
+            return c.rowcount > 0
 
     def get_all_users(self) -> List[dict]:
         with sqlite3.connect(self.db_path) as conn:

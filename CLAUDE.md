@@ -47,8 +47,10 @@ Settings are read from environment variables in `api.py`:
 - Admin checks: `get_current_admin` dependency wraps `get_current_user`
 - Database: raw `sqlite3` with parameterized queries; each method opens its own connection
 - Passwords: hashed with `bcrypt`
-- ECO state machine: DRAFT -> SUBMITTED -> APPROVED/REJECTED (enforced in `eco_manager.py`)
+- ECO state machine: DRAFT -> SUBMITTED -> APPROVED/REJECTED (strictly enforced in `eco_manager.py`)
 - First registered user is auto-promoted to admin
+- Token revocation: `POST /logout` deletes the token; tokens are also cleaned up on user deletion
+- Database indexes on foreign keys and frequently queried columns
 
 ## Conventions
 
