@@ -337,13 +337,30 @@ class ECO:
             eco['attachments'] = [dict(r) for r in c.fetchall()]
             return eco
 
-    def list_ecos(self, limit: int = 50, offset: int = 0) -> List[Tuple[int, str, str, str]]:
+    def list_ecos(
+        self,
+        limit: int = 50,
+        offset: int = 0,
+        search: Optional[str] = None,
+        status: Optional[str] = None,
+    ) -> List[Tuple[int, str, str, str]]:
         with sqlite3.connect(self.db_path) as conn:
             c = conn.cursor()
-            c.execute(
-                "SELECT id, title, status, created_at FROM ecos ORDER BY created_at DESC LIMIT ? OFFSET ?",
-                (limit, offset),
-            )
+            query = "SELECT id, title, status, created_at FROM ecos"
+            conditions = []
+            params: list = []
+            if search:
+                conditions.append("(title LIKE ? OR description LIKE ?)")
+                pattern = f"%{search}%"
+                params.extend([pattern, pattern])
+            if status:
+                conditions.append("status = ?")
+                params.append(status)
+            if conditions:
+                query += " WHERE " + " AND ".join(conditions)
+            query += " ORDER BY created_at DESC LIMIT ? OFFSET ?"
+            params.extend([limit, offset])
+            c.execute(query, params)
             return c.fetchall()
 
     def generate_report(self, eco_id: int, output_file: str) -> bool:

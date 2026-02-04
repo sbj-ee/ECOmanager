@@ -239,6 +239,29 @@ def test_pagination_query_params(auth_headers):
     assert len(resp.json()) == 2
 
 
+def test_search_ecos_via_api(auth_headers):
+    client.post("/ecos", json={"title": "Rocket Motor", "description": "Thrust"}, headers=auth_headers)
+    client.post("/ecos", json={"title": "Fuel System", "description": "Capacity"}, headers=auth_headers)
+
+    resp = client.get("/ecos?search=Rocket", headers=auth_headers)
+    assert resp.status_code == 200
+    assert len(resp.json()) == 1
+    assert resp.json()[0]["title"] == "Rocket Motor"
+
+    resp = client.get("/ecos?search=nonexistent", headers=auth_headers)
+    assert len(resp.json()) == 0
+
+
+def test_filter_status_via_api(auth_headers):
+    resp = client.post("/ecos", json={"title": "FilterTest", "description": "D"}, headers=auth_headers)
+    eco_id = resp.json()["eco_id"]
+    client.post(f"/ecos/{eco_id}/submit", json={"comment": "go"}, headers=auth_headers)
+
+    resp = client.get("/ecos?status=SUBMITTED", headers=auth_headers)
+    assert resp.status_code == 200
+    assert all(e["status"] == "SUBMITTED" for e in resp.json())
+
+
 def test_upload_size_limit(auth_headers, monkeypatch):
     import api
     monkeypatch.setattr(api, "MAX_UPLOAD_SIZE", 10)  # 10 bytes

@@ -130,8 +130,10 @@ def list_ecos(
     user: User = Depends(get_current_user),
     limit: int = Query(default=50, ge=1, le=200),
     offset: int = Query(default=0, ge=0),
+    search: Optional[str] = Query(default=None),
+    status: Optional[str] = Query(default=None),
 ):
-    ecos = eco_system.list_ecos(limit=limit, offset=offset)
+    ecos = eco_system.list_ecos(limit=limit, offset=offset, search=search, status=status)
     return [{"id": r[0], "title": r[1], "status": r[2], "created_at": r[3]} for r in ecos]
 
 @app.get("/ecos/{eco_id}")

@@ -75,9 +75,34 @@ function logout() {
 }
 
 // Dashboard
+let searchTimeout = null;
+
+function initSearch() {
+    const searchInput = document.getElementById('search-input');
+    const statusFilter = document.getElementById('status-filter');
+    if (!searchInput) return;
+
+    searchInput.addEventListener('input', () => {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(loadECOs, 300);
+    });
+    statusFilter.addEventListener('change', loadECOs);
+}
+
 async function loadECOs() {
     const token = localStorage.getItem('eco_token');
-    const res = await fetch(`${API_URL}/ecos`, {
+    const params = new URLSearchParams();
+    const searchInput = document.getElementById('search-input');
+    const statusFilter = document.getElementById('status-filter');
+    if (searchInput && searchInput.value.trim()) {
+        params.set('search', searchInput.value.trim());
+    }
+    if (statusFilter && statusFilter.value) {
+        params.set('status', statusFilter.value);
+    }
+    const queryString = params.toString();
+    const url = queryString ? `${API_URL}/ecos?${queryString}` : `${API_URL}/ecos`;
+    const res = await fetch(url, {
         headers: { 'X-API-Token': token }
     });
 

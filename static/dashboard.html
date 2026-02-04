@@ -31,6 +31,18 @@
             <button onclick="showCreateModal()" class="btn btn-primary">+ New ECO</button>
         </div>
 
+        <div style="display: flex; gap: 1rem; margin-bottom: 1rem; align-items: center;">
+            <input type="text" id="search-input" placeholder="Search ECOs by title or description..."
+                style="flex: 1; margin-bottom: 0;">
+            <select id="status-filter" style="width: 180px; margin-bottom: 0;">
+                <option value="">All Statuses</option>
+                <option value="DRAFT">Draft</option>
+                <option value="SUBMITTED">Submitted</option>
+                <option value="APPROVED">Approved</option>
+                <option value="REJECTED">Rejected</option>
+            </select>
+        </div>
+
         <div class="glass-card">
             <table style="width: 100%; border-collapse: collapse; text-align: left;">
                 <thead>
@@ -262,6 +274,7 @@
                 document.getElementById('admin-btn').classList.remove('hidden');
             }
 
+            initSearch();
             loadECOs();
         }
     </script>

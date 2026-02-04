@@ -122,6 +122,56 @@ def test_list_ecos(eco_system):
     assert ecos[0][1] == "B"
     assert ecos[1][1] == "A"
 
+def test_search_ecos_by_title(eco_system):
+    eco_system.create_eco("Rocket Engine", "Thrust specs", "u")
+    eco_system.create_eco("Fuel Tank", "Capacity details", "u")
+    eco_system.create_eco("Rocket Nozzle", "Nozzle geometry", "u")
+
+    results = eco_system.list_ecos(search="Rocket")
+    assert len(results) == 2
+
+    results = eco_system.list_ecos(search="Fuel")
+    assert len(results) == 1
+    assert results[0][1] == "Fuel Tank"
+
+
+def test_search_ecos_by_description(eco_system):
+    eco_system.create_eco("Part A", "high voltage connector", "u")
+    eco_system.create_eco("Part B", "low voltage resistor", "u")
+
+    results = eco_system.list_ecos(search="voltage")
+    assert len(results) == 2
+
+    results = eco_system.list_ecos(search="resistor")
+    assert len(results) == 1
+
+
+def test_search_no_results(eco_system):
+    eco_system.create_eco("Something", "Desc", "u")
+    assert len(eco_system.list_ecos(search="nonexistent")) == 0
+
+
+def test_filter_by_status(eco_system):
+    id1 = eco_system.create_eco("Draft One", "D", "u")
+    id2 = eco_system.create_eco("Submitted One", "D", "u")
+    eco_system.submit_eco(id2, "u")
+
+    assert len(eco_system.list_ecos(status="DRAFT")) == 1
+    assert len(eco_system.list_ecos(status="SUBMITTED")) == 1
+    assert len(eco_system.list_ecos(status="APPROVED")) == 0
+
+
+def test_search_with_status_filter(eco_system):
+    id1 = eco_system.create_eco("Engine Alpha", "D", "u")
+    id2 = eco_system.create_eco("Engine Beta", "D", "u")
+    eco_system.submit_eco(id2, "u")
+
+    # Search "Engine" but only DRAFT
+    results = eco_system.list_ecos(search="Engine", status="DRAFT")
+    assert len(results) == 1
+    assert results[0][1] == "Engine Alpha"
+
+
 def test_submit_invalid_eco(eco_system):
     # Test submitting a non-existent ECO ID
     assert eco_system.submit_eco(999, "user1") is False
