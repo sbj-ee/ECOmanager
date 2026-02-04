@@ -4,29 +4,62 @@ __pycache__/
 *$py.class
 
 # Distribution / packaging
+*.egg
 *.egg-info/
 dist/
 build/
+*.whl
 
 # Virtual environments
 venv/
 .venv/
+env/
 
-# pytest
+# pytest / coverage
 .pytest_cache/
 .coverage
+.coverage.*
 htmlcov/
+coverage.xml
 
-# IDE
+# IDE / editors
 .idea/
 .vscode/
 *.swp
+*.swo
+*~
+.project
+.settings/
+*.sublime-project
+*.sublime-workspace
 
-# Local files
-*.db
-*.pkl
-*.log
+# OS files
+.DS_Store
+Thumbs.db
+
+# Environment / secrets
 .env
+.env.*
+*.pem
+*.key
+
+# Databases
+*.db
+*.db-journal
+*.sqlite3
+
+# Logs
+*.log
+
+# Attachments and uploads (user data)
+attachments/
+tmp_*
+
+# Generated reports
+eco_*_report.md
+
+# Pickled data
+*.pkl
 
 # Claude Code
 .claude/
