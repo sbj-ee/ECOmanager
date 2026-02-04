@@ -212,8 +212,9 @@ class ECO:
         now = datetime.datetime.now().isoformat()
         with sqlite3.connect(self.db_path) as conn:
             c = conn.cursor()
-            c.execute("SELECT id FROM ecos WHERE id = ?", (eco_id,))
-            if not c.fetchone():
+            c.execute("SELECT status FROM ecos WHERE id = ?", (eco_id,))
+            row = c.fetchone()
+            if not row or row[0] != 'DRAFT':
                 return False
             c.execute("UPDATE ecos SET status = 'SUBMITTED', updated_at = ? WHERE id = ?", (now, eco_id))
             c.execute("""

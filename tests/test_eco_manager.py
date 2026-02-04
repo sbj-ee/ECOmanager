@@ -1,23 +1,10 @@
-import pytest
 import os
-import sys
 import sqlite3
-from pathlib import Path
-import datetime
 import time
+from pathlib import Path
 from unittest.mock import patch
 
-# Ensure we can import the module from the parent directory
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
 from eco_manager import ECO
-
-@pytest.fixture
-def eco_system(tmp_path):
-    # Create valid paths for DB and attachments within the temp directory
-    db_path = tmp_path / "test_eco.db"
-    attachments_dir = tmp_path / "test_attachments"
-    return ECO(db_path=str(db_path), attachments_dir=str(attachments_dir))
 
 def test_create_user(eco_system):
     user_id = eco_system.get_or_create_user("testuser")
@@ -67,10 +54,33 @@ def test_reject_flow(eco_system):
 
 def test_invalid_transitions(eco_system):
     eco_id = eco_system.create_eco("Invalid Trans", "Desc", "user1")
-    
+
     # Cannot approve/reject if not SUBMITTED (it is DRAFT)
     assert eco_system.approve_eco(eco_id, "admin") is False
     assert eco_system.reject_eco(eco_id, "admin", "No") is False
+
+
+def test_cannot_submit_twice(eco_system):
+    eco_id = eco_system.create_eco("Double Submit", "Desc", "user1")
+    assert eco_system.submit_eco(eco_id, "user1") is True
+    # Second submission should fail
+    assert eco_system.submit_eco(eco_id, "user1") is False
+
+
+def test_cannot_resubmit_rejected(eco_system):
+    eco_id = eco_system.create_eco("Reject Resubmit", "Desc", "user1")
+    eco_system.submit_eco(eco_id, "user1")
+    eco_system.reject_eco(eco_id, "reviewer", "Bad")
+    # Cannot go from REJECTED back to SUBMITTED
+    assert eco_system.submit_eco(eco_id, "user1") is False
+
+
+def test_cannot_submit_approved(eco_system):
+    eco_id = eco_system.create_eco("Approved Submit", "Desc", "user1")
+    eco_system.submit_eco(eco_id, "user1")
+    eco_system.approve_eco(eco_id, "reviewer", "Good")
+    # Cannot go from APPROVED back to SUBMITTED
+    assert eco_system.submit_eco(eco_id, "user1") is False
 
 def test_attachments(eco_system, tmp_path):
     eco_id = eco_system.create_eco("Attach Test", "Desc", "user1")

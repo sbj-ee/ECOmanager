@@ -1,5 +1,6 @@
 import logging
 import os
+import tempfile
 
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException, BackgroundTasks, Depends, Header, Query
 from fastapi.responses import FileResponse, RedirectResponse
@@ -162,10 +163,10 @@ def add_attachment(eco_id: int, file: UploadFile = File(...), user: User = Depen
             detail=f"File too large. Maximum size is {MAX_UPLOAD_SIZE // (1024 * 1024)}MB",
         )
 
-    tmp_path = f"tmp_{file.filename}"
     try:
-        with open(tmp_path, "wb") as buffer:
-            buffer.write(content)
+        with tempfile.NamedTemporaryFile(delete=False) as tmp:
+            tmp.write(content)
+            tmp_path = tmp.name
 
         success = eco_system.add_attachment(eco_id, file.filename, tmp_path, user.username)
 

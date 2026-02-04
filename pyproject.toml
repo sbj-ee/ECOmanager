@@ -1,0 +1,31 @@
+[project]
+name = "ecomanager"
+version = "1.0.0"
+description = "Engineering Change Order management system"
+requires-python = ">=3.8"
+license = "MIT"
+dependencies = [
+    "fastapi",
+    "uvicorn",
+    "gunicorn",
+    "httpx",
+    "python-multipart",
+    "bcrypt",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-cov",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-v"
+
+[tool.coverage.run]
+source = ["eco_manager", "api"]
+omit = ["tests/*"]
+
+[tool.coverage.report]
+show_missing = true
