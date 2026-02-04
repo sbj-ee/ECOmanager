@@ -10,7 +10,10 @@ An Engineering Change Order (ECO) management system built with Python, FastAPI, 
 - **Report Generation** -- Export ECO details to Markdown reports
 - **Role-Based Access** -- Admin and User roles; first registered user becomes admin
 - **REST API** -- FastAPI with interactive docs at `/docs`
-- **Web Interface** -- Glassmorphism dark-mode UI with status badges
+- **Search & Filter** -- Search ECOs by title or description, filter by status
+- **Pagination** -- Configurable 10, 50, or 100 items per page with Previous/Next navigation
+- **Admin Actions** -- Admins can edit and delete ECOs
+- **Web Interface** -- Glassmorphism dark-mode UI with status badges and built-in help guide
 - **Configurable** -- Database path, CORS origins, upload limits, and more via environment variables
 
 ## Prerequisites
@@ -61,8 +64,12 @@ From the dashboard you can:
 - Create new ECOs
 - View ECO details, history, and attachments
 - Submit, Approve, or Reject ECOs
+- Edit or Delete ECOs (admin only)
+- Search by title/description and filter by status
+- Paginate results (10, 50, or 100 per page)
 - Upload and view file attachments
 - Download Markdown reports
+- Access the built-in Help guide
 - Manage users via the Admin Panel (admins only)
 
 ## Administration
@@ -112,8 +119,10 @@ curl http://127.0.0.1:8000/ecos \
 | `POST` | `/register` | Register a new user |
 | `POST` | `/token` | Generate an API token |
 | `POST` | `/logout` | Revoke current API token |
-| `GET` | `/ecos` | List ECOs (supports `?limit=` and `?offset=`) |
+| `GET` | `/ecos` | List ECOs (`?limit=`, `?offset=`, `?search=`, `?status=`) |
 | `POST` | `/ecos` | Create a new ECO |
+| `PUT` | `/ecos/{id}` | Edit an ECO (admin only) |
+| `DELETE` | `/ecos/{id}` | Delete an ECO (admin only) |
 | `GET` | `/ecos/{id}` | Get ECO details, history, and attachments |
 | `POST` | `/ecos/{id}/submit` | Submit ECO for review |
 | `POST` | `/ecos/{id}/approve` | Approve a submitted ECO |

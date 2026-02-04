@@ -11,7 +11,8 @@ ECOmanager is an Engineering Change Order management system with a FastAPI backe
 - `api.py` -- FastAPI REST API (routes, auth dependencies, file upload handling)
 - `eco_manager.py` -- Core business logic (`ECO` class with all DB operations)
 - `static/` -- Frontend (vanilla JS, CSS, HTML)
-- `tests/` -- pytest test suite
+- `tests/` -- pytest test suite (63 tests)
+- `make_admin.py` -- CLI utility to promote a user to admin
 
 The `ECO` class owns all database access. The API layer is thin -- it validates input via Pydantic models, resolves the current user from the `X-API-Token` header, and delegates to `ECO` methods.
 
@@ -48,8 +49,11 @@ Settings are read from environment variables in `api.py`:
 - Database: raw `sqlite3` with parameterized queries; each method opens its own connection
 - Passwords: hashed with `bcrypt`
 - ECO state machine: DRAFT -> SUBMITTED -> APPROVED/REJECTED (strictly enforced in `eco_manager.py`)
+- Admin-only operations: edit ECO (`PUT /ecos/{id}`), delete ECO (`DELETE /ecos/{id}`), user management
 - First registered user is auto-promoted to admin
 - Token revocation: `POST /logout` deletes the token; tokens are also cleaned up on user deletion
+- Search: `list_ecos()` supports `search` (title/description LIKE) and `status` (exact match) filters
+- Pagination: `limit`/`offset` on list endpoints; frontend offers 10/50/100 per page with Previous/Next controls
 - Database indexes on foreign keys and frequently queried columns
 
 ## Conventions
