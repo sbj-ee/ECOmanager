@@ -2,6 +2,7 @@ pytest
 pytest-cov
 fastapi
 uvicorn
+gunicorn
 httpx
 python-multipart
 bcrypt
