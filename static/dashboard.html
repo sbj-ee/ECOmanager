@@ -10,6 +10,7 @@
 </head>
 
 <body>
+    <div id="toast-container"></div>
 
     <nav class="glass-card"
         style="border-radius: 0; border-left: none; border-right: none; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center;">
@@ -58,6 +59,7 @@
                     <tr style="border-bottom: 1px solid var(--border);">
                         <th style="padding: 1rem;">ID</th>
                         <th style="padding: 1rem;">Title</th>
+                        <th style="padding: 1rem;">Created By</th>
                         <th style="padding: 1rem;">Status</th>
                         <th style="padding: 1rem;">Created At</th>
                         <th style="padding: 1rem;">Action</th>
@@ -156,7 +158,7 @@
     <!-- Admin Modal -->
     <div id="admin-modal" class="hidden"
         style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); display: flex; justify-content: center; align-items: center; z-index: 100;">
-        <div class="glass-card" style="width: 600px; max-width: 90%; max-height: 80vh; overflow-y: auto;">
+        <div class="glass-card" style="width: 95vw; max-width: 1600px; max-height: 80vh; overflow-y: auto;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
                 <h2>User Management</h2>
                 <button onclick="hideAdminModal()"
@@ -167,37 +169,37 @@
             <div style="background: rgba(0,0,0,0.2); padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
                 <h3 style="margin-bottom: 1rem; font-size: 1rem;">Add New User</h3>
                 <form onsubmit="handleAdminAddUser(event)"
-                    style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: end;">
-                    <div style="width: 150px;">
+                    style="display: flex; gap: 1rem; flex-wrap: nowrap; align-items: end;">
+                    <div style="flex: 1; min-width: 120px;">
                         <label style="font-size: 0.8rem; display: block; margin-bottom: 0.25rem;">Username</label>
                         <input type="text" id="admin-new-user" required style="margin-bottom: 0; padding: 0.5rem;">
                     </div>
-                    <div style="width: 150px;">
+                    <div style="flex: 1; min-width: 120px;">
                         <label style="font-size: 0.8rem; display: block; margin-bottom: 0.25rem;">Password</label>
                         <input type="password" id="admin-new-pass" required style="margin-bottom: 0; padding: 0.5rem;">
                     </div>
-                    <div style="width: 150px;">
+                    <div style="flex: 1; min-width: 120px;">
                         <label style="font-size: 0.8rem; display: block; margin-bottom: 0.25rem;">First Name</label>
                         <input type="text" id="admin-new-first" style="margin-bottom: 0; padding: 0.5rem;">
                     </div>
-                    <div style="width: 150px;">
+                    <div style="flex: 1; min-width: 120px;">
                         <label style="font-size: 0.8rem; display: block; margin-bottom: 0.25rem;">Last Name</label>
                         <input type="text" id="admin-new-last" style="margin-bottom: 0; padding: 0.5rem;">
                     </div>
-                    <div style="width: 200px;">
+                    <div style="flex: 1.5; min-width: 160px;">
                         <label style="font-size: 0.8rem; display: block; margin-bottom: 0.25rem;">Email</label>
                         <input type="email" id="admin-new-email" style="margin-bottom: 0; padding: 0.5rem;">
                     </div>
-                    <button type="submit" class="btn btn-success" style="padding: 0.5rem 1rem;">Add</button>
+                    <button type="submit" class="btn btn-success" style="padding: 0.5rem 1rem; white-space: nowrap;">Add</button>
                 </form>
             </div>
 
-            <table style="width: 100%; text-align: left; border-collapse: collapse;">
+            <table style="width: 100%; text-align: left; border-collapse: collapse; white-space: nowrap;">
                 <thead>
                     <tr style="border-bottom: 1px solid var(--border);">
                         <th style="padding: 0.5rem;">ID</th>
                         <th style="padding: 0.5rem;">Username</th>
-                        <th style="padding: 0.5rem;">Unmasked Name</th>
+                        <th style="padding: 0.5rem;">Full Name</th>
                         <th style="padding: 0.5rem;">Email</th>
                         <th style="padding: 0.5rem;">Role</th>
                         <th style="padding: 0.5rem;">Action</th>

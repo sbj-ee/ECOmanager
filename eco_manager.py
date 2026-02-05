@@ -11,6 +11,15 @@ import bcrypt
 
 logger = logging.getLogger(__name__)
 
+# Status constants
+STATUS_DRAFT = "DRAFT"
+STATUS_SUBMITTED = "SUBMITTED"
+STATUS_APPROVED = "APPROVED"
+STATUS_REJECTED = "REJECTED"
+
+MIN_PASSWORD_LENGTH = 8
+
+
 class ECO:
     def __init__(self, db_path: str = "eco_system.db", attachments_dir: str = "attachments"):
         self.db_path = db_path
@@ -106,7 +115,17 @@ class ECO:
             conn.commit()
             return c.lastrowid
 
+    def check_health(self) -> bool:
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                conn.execute("SELECT 1")
+            return True
+        except sqlite3.Error:
+            return False
+
     def register_user(self, username: str, password: str, first_name: str = None, last_name: str = None, email: str = None) -> bool:
+        if len(password) < MIN_PASSWORD_LENGTH:
+            return False
         # bcrypt.hashpw returns bytes, we decode to store as text
         password_hash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
         try:
@@ -263,13 +282,13 @@ class ECO:
             c = conn.cursor()
             c.execute("SELECT status FROM ecos WHERE id = ?", (eco_id,))
             row = c.fetchone()
-            if not row or row[0] != 'DRAFT':
+            if not row or row[0] != STATUS_DRAFT:
                 return False
-            c.execute("UPDATE ecos SET status = 'SUBMITTED', updated_at = ? WHERE id = ?", (now, eco_id))
+            c.execute("UPDATE ecos SET status = ?, updated_at = ? WHERE id = ?", (STATUS_SUBMITTED, now, eco_id))
             c.execute("""
                 INSERT INTO eco_history (eco_id, action, comment, performed_by, performed_at)
-                VALUES (?, 'SUBMITTED', ?, ?, ?)
-            """, (eco_id, comment, user_id, now))
+                VALUES (?, ?, ?, ?, ?)
+            """, (eco_id, STATUS_SUBMITTED, comment, user_id, now))
             conn.commit()
             return True
 
@@ -280,13 +299,13 @@ class ECO:
             c = conn.cursor()
             c.execute("SELECT status FROM ecos WHERE id = ?", (eco_id,))
             row = c.fetchone()
-            if not row or row[0] != 'SUBMITTED':
+            if not row or row[0] != STATUS_SUBMITTED:
                 return False
-            c.execute("UPDATE ecos SET status = 'APPROVED', updated_at = ? WHERE id = ?", (now, eco_id))
+            c.execute("UPDATE ecos SET status = ?, updated_at = ? WHERE id = ?", (STATUS_APPROVED, now, eco_id))
             c.execute("""
                 INSERT INTO eco_history (eco_id, action, comment, performed_by, performed_at)
-                VALUES (?, 'APPROVED', ?, ?, ?)
-            """, (eco_id, comment, user_id, now))
+                VALUES (?, ?, ?, ?, ?)
+            """, (eco_id, STATUS_APPROVED, comment, user_id, now))
             conn.commit()
             return True
 
@@ -297,13 +316,13 @@ class ECO:
             c = conn.cursor()
             c.execute("SELECT status FROM ecos WHERE id = ?", (eco_id,))
             row = c.fetchone()
-            if not row or row[0] != 'SUBMITTED':
+            if not row or row[0] != STATUS_SUBMITTED:
                 return False
-            c.execute("UPDATE ecos SET status = 'REJECTED', updated_at = ? WHERE id = ?", (now, eco_id))
+            c.execute("UPDATE ecos SET status = ?, updated_at = ? WHERE id = ?", (STATUS_REJECTED, now, eco_id))
             c.execute("""
                 INSERT INTO eco_history (eco_id, action, comment, performed_by, performed_at)
-                VALUES (?, 'REJECTED', ?, ?, ?)
-            """, (eco_id, comment, user_id, now))
+                VALUES (?, ?, ?, ?, ?)
+            """, (eco_id, STATUS_REJECTED, comment, user_id, now))
             conn.commit()
             return True
 
@@ -382,7 +401,7 @@ class ECO:
     ) -> List[Tuple[int, str, str, str]]:
         with sqlite3.connect(self.db_path) as conn:
             c = conn.cursor()
-            query = "SELECT id, title, status, created_at FROM ecos"
+            query = "SELECT e.id, e.title, e.status, e.created_at, u.username AS created_by FROM ecos e JOIN users u ON e.created_by = u.id"
             conditions = []
             params: list = []
             if search:

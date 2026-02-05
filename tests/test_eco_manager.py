@@ -272,9 +272,25 @@ def test_verify_password_edge_cases(eco_system):
     assert eco_system.verify_password("legacy", "pass") is False
 
 
+def test_password_minimum_length(eco_system):
+    assert eco_system.register_user("shortpw", "1234567") is False  # 7 chars
+    assert eco_system.register_user("longpw", "12345678") is True   # 8 chars
+
+
+def test_check_health(eco_system):
+    assert eco_system.check_health() is True
+
+
+def test_list_ecos_includes_creator(eco_system):
+    eco_system.create_eco("Creator Test", "D", "alice")
+    results = eco_system.list_ecos()
+    assert len(results) == 1
+    assert results[0][4] == "alice"
+
+
 def test_revoke_token(eco_system):
-    eco_system.register_user("revoker", "pw")
-    token = eco_system.generate_token("revoker", "pw")
+    eco_system.register_user("revoker", "password1")
+    token = eco_system.generate_token("revoker", "password1")
     assert eco_system.get_user_from_token(token) is not None
     assert eco_system.revoke_token(token) is True
     assert eco_system.get_user_from_token(token) is None
@@ -283,7 +299,7 @@ def test_revoke_token(eco_system):
 
 
 def test_delete_last_admin(eco_system):
-    eco_system.register_user("admin1", "pw")  # First user is auto-admin
+    eco_system.register_user("admin1", "password1")  # First user is auto-admin
     # Verify the user is admin
     users = eco_system.get_all_users()
     admin = [u for u in users if u['is_admin']][0]
@@ -292,17 +308,17 @@ def test_delete_last_admin(eco_system):
 
 
 def test_delete_non_admin_user(eco_system):
-    eco_system.register_user("admin1", "pw")  # auto-admin
-    eco_system.register_user("regular", "pw")
+    eco_system.register_user("admin1", "password1")  # auto-admin
+    eco_system.register_user("regular", "password1")
     users = eco_system.get_all_users()
     regular = [u for u in users if not u['is_admin']][0]
     assert eco_system.delete_user(regular['id']) is True
 
 
 def test_token_cleanup_on_user_delete(eco_system):
-    eco_system.register_user("admin1", "pw")  # auto-admin
-    eco_system.register_user("doomed", "pw")
-    token = eco_system.generate_token("doomed", "pw")
+    eco_system.register_user("admin1", "password1")  # auto-admin
+    eco_system.register_user("doomed", "password1")
+    token = eco_system.generate_token("doomed", "password1")
     assert eco_system.get_user_from_token(token) is not None
     users = eco_system.get_all_users()
     doomed = [u for u in users if u['username'] == 'doomed'][0]

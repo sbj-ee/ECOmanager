@@ -1,5 +1,20 @@
 const API_URL = "";
 
+// Toast notifications
+function showToast(message, type = 'success') {
+    const container = document.getElementById('toast-container');
+    if (!container) {
+        // Fallback for login page where toast container doesn't exist
+        alert(message);
+        return;
+    }
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    toast.textContent = message;
+    container.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+}
+
 // Auth
 function toggleAuth() {
     const login = document.getElementById('login-form');
@@ -52,7 +67,8 @@ async function handleRegister(e) {
         });
 
         if (res.ok) {
-            alert('Registration successful! Please login.');
+            showError('Registration successful! Please login.');
+            document.getElementById('error-msg').style.color = 'var(--success)';
             toggleAuth();
         } else {
             const data = await res.json();
@@ -119,6 +135,18 @@ async function loadECOs() {
     if (statusFilter && statusFilter.value) {
         params.set('status', statusFilter.value);
     }
+
+    const tbody = document.getElementById('eco-list');
+    // Show loading state
+    tbody.innerHTML = '';
+    const loadingRow = document.createElement('tr');
+    loadingRow.className = 'loading-row';
+    const loadingTd = document.createElement('td');
+    loadingTd.colSpan = 6;
+    loadingTd.innerHTML = '<span class="spinner"></span> Loading...';
+    loadingRow.appendChild(loadingTd);
+    tbody.appendChild(loadingRow);
+
     const url = `${API_URL}/ecos?${params.toString()}`;
     const res = await fetch(url, {
         headers: { 'X-API-Token': token }
@@ -127,8 +155,17 @@ async function loadECOs() {
     if (res.status === 401) logout();
 
     const list = await res.json();
-    const tbody = document.getElementById('eco-list');
     tbody.innerHTML = '';
+
+    if (list.length === 0) {
+        const emptyRow = document.createElement('tr');
+        const emptyTd = document.createElement('td');
+        emptyTd.colSpan = 6;
+        emptyTd.style.cssText = 'text-align: center; padding: 2rem; color: var(--text-muted);';
+        emptyTd.textContent = 'No ECOs found. Create one or adjust your search filters.';
+        emptyRow.appendChild(emptyTd);
+        tbody.appendChild(emptyRow);
+    }
 
     list.forEach(eco => {
         const tr = document.createElement('tr');
@@ -142,6 +179,11 @@ async function loadECOs() {
         tdTitle.style.padding = '1rem';
         tdTitle.style.fontWeight = '600';
         tdTitle.textContent = eco.title;
+
+        const tdCreator = document.createElement('td');
+        tdCreator.style.padding = '1rem';
+        tdCreator.style.color = 'var(--text-muted)';
+        tdCreator.textContent = eco.created_by;
 
         const tdStatus = document.createElement('td');
         tdStatus.style.padding = '1rem';
@@ -165,7 +207,7 @@ async function loadECOs() {
         viewBtn.onclick = () => openDetail(eco.id);
         tdAction.appendChild(viewBtn);
 
-        tr.append(tdId, tdTitle, tdStatus, tdDate, tdAction);
+        tr.append(tdId, tdTitle, tdCreator, tdStatus, tdDate, tdAction);
         tbody.appendChild(tr);
     });
 
@@ -214,9 +256,10 @@ async function handleCreateECO(e) {
 
     if (res.ok) {
         hideCreateModal();
+        showToast('ECO created successfully');
         loadECOs();
     } else {
-        alert('Failed to create ECO');
+        showToast('Failed to create ECO', 'error');
     }
 }
 
@@ -352,7 +395,7 @@ async function performAction(action, requireComment = false) {
         openDetail(currentEcoId); // Refresh details
     } else {
         const d = await res.json();
-        alert(d.detail || 'Action failed');
+        showToast(d.detail || 'Action failed', 'error');
     }
 }
 
@@ -386,7 +429,7 @@ async function handleEditECO(e) {
         openDetail(currentEcoId);
     } else {
         const d = await res.json();
-        alert(d.detail || 'Failed to update ECO');
+        showToast(d.detail || 'Failed to update ECO', 'error');
     }
 }
 
@@ -403,7 +446,7 @@ async function handleDeleteECO(ecoId) {
         hideDetailModal();
     } else {
         const d = await res.json();
-        alert(d.detail || 'Failed to delete ECO');
+        showToast(d.detail || 'Failed to delete ECO', 'error');
     }
 }
 
@@ -424,9 +467,10 @@ async function handleUpload(e) {
 
     if (res.ok) {
         fileInput.value = '';
+        showToast('File uploaded successfully');
         openDetail(currentEcoId);
     } else {
-        alert('Upload failed');
+        showToast('Upload failed', 'error');
     }
 }
 
@@ -446,7 +490,7 @@ async function downloadReport() {
         a.click();
         window.URL.revokeObjectURL(url);
     } else {
-        alert('Download failed');
+        showToast('Download failed', 'error');
     }
 }
 
@@ -464,10 +508,10 @@ async function viewAttachment(filename) {
             // Note: ObjectURL revocation is tricky with window.open, usually browser handles it on close or timeout, 
             // but strict memory management might require tracking. For now, letting browser handle.
         } else {
-            alert('Failed to view attachment');
+            showToast('Failed to view attachment', 'error');
         }
     } catch (e) {
-        alert('Error fetching attachment');
+        showToast('Error fetching attachment', 'error');
     }
 }
 
@@ -488,7 +532,7 @@ async function loadUsers() {
     });
 
     if (!res.ok) {
-        alert("Failed to load users");
+        showToast('Failed to load users', 'error');
         return;
     }
 
@@ -555,9 +599,10 @@ async function deleteUser(userId) {
     });
 
     if (res.ok) {
+        showToast('User deleted');
         loadUsers();
     } else {
-        alert("Failed to delete user");
+        showToast('Failed to delete user', 'error');
     }
 }
 
@@ -590,13 +635,14 @@ async function handleAdminAddUser(e) {
             firstIn.value = '';
             lastIn.value = '';
             emailIn.value = '';
-            loadUsers(); // Refresh list to see new user
+            showToast('User added successfully');
+            loadUsers();
         } else {
             const data = await res.json();
-            alert(data.detail || "Failed to create user");
+            showToast(data.detail || 'Failed to create user', 'error');
         }
     } catch (err) {
-        alert("Connection error");
+        showToast('Connection error', 'error');
     }
 }
 

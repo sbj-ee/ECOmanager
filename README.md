@@ -98,12 +98,12 @@ The API uses token-based authentication via the `X-API-Token` header.
 # Register
 curl -X POST http://127.0.0.1:8000/register \
   -H "Content-Type: application/json" \
-  -d '{"username": "alice", "password": "secretpassword"}'
+  -d '{"username": "alice", "password": "<PASSWORD>"}'
 
 # Get token
 curl -X POST http://127.0.0.1:8000/token \
   -H "Content-Type: application/json" \
-  -d '{"username": "alice", "password": "secretpassword"}'
+  -d '{"username": "alice", "password": "<your-password>"}'
 # Returns: {"token": "your_generated_token", "is_admin": true}
 
 # Use token

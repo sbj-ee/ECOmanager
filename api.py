@@ -2,14 +2,15 @@ import logging
 import os
 import tempfile
 
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException, BackgroundTasks, Depends, Header, Query
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException, BackgroundTasks, Depends, Header, Query, Request
 from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware
 from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
 import shutil
-from eco_manager import ECO
+from eco_manager import ECO, MIN_PASSWORD_LENGTH
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -29,6 +30,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        response = await call_next(request)
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        return response
+
+app.add_middleware(SecurityHeadersMiddleware)
+
 MAX_UPLOAD_SIZE = int(os.environ.get("MAX_UPLOAD_SIZE", 10 * 1024 * 1024))  # 10MB default
 
 eco_system = ECO(
@@ -42,7 +53,9 @@ def read_root():
 
 @app.get("/health")
 def health_check():
-    return {"status": "ok"}
+    db_ok = eco_system.check_health()
+    status = "ok" if db_ok else "degraded"
+    return {"status": status, "database": "ok" if db_ok else "error"}
 
 # Models
 class User(BaseModel):
@@ -80,6 +93,7 @@ class ECOItem(BaseModel):
     title: str
     status: str
     created_at: str
+    created_by: str
 
 # Dependencies
 def get_current_user(x_api_token: str = Header(...)) -> User:
@@ -95,6 +109,8 @@ def get_current_admin(user: User = Depends(get_current_user)) -> User:
 
 @app.post("/register", status_code=201)
 def register(req: UserRegister):
+    if len(req.password) < MIN_PASSWORD_LENGTH:
+        raise HTTPException(status_code=400, detail=f"Password must be at least {MIN_PASSWORD_LENGTH} characters")
     success = eco_system.register_user(req.username, req.password, req.first_name, req.last_name, req.email)
     if not success:
         raise HTTPException(status_code=400, detail="Username already exists")
@@ -134,7 +150,7 @@ def list_ecos(
     status: Optional[str] = Query(default=None),
 ):
     ecos = eco_system.list_ecos(limit=limit, offset=offset, search=search, status=status)
-    return [{"id": r[0], "title": r[1], "status": r[2], "created_at": r[3]} for r in ecos]
+    return [{"id": r[0], "title": r[1], "status": r[2], "created_at": r[3], "created_by": r[4]} for r in ecos]
 
 @app.get("/ecos/{eco_id}")
 def get_eco(eco_id: int, user: User = Depends(get_current_user)):
