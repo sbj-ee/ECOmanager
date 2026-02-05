@@ -26,8 +26,8 @@ def test_eco_system(tmp_path):
 @pytest.fixture
 def auth_headers(test_eco_system):
     # Must register to get token now
-    test_eco_system.register_user("api_user", "password")
-    token = test_eco_system.generate_token("api_user", "password")
+    test_eco_system.register_user("api_user", "password1")
+    token = test_eco_system.generate_token("api_user", "password1")
     return {"X-API-Token": token}
 
 def test_auth_failure():
@@ -39,20 +39,25 @@ def test_auth_failure():
     assert response.json()["detail"] == "Invalid API Token"
 
 def test_register_and_token():
-    # Register
-    resp = client.post("/register", json={"username": "newuser", "password": "pw"})
-    assert resp.status_code == 201
-    
-    # Register duplicate
-    resp = client.post("/register", json={"username": "newuser", "password": "pw"})
+    # Register with short password
+    resp = client.post("/register", json={"username": "newuser", "password": "short"})
     assert resp.status_code == 400
-    
+    assert "8 characters" in resp.json()["detail"]
+
+    # Register
+    resp = client.post("/register", json={"username": "newuser", "password": "password1"})
+    assert resp.status_code == 201
+
+    # Register duplicate
+    resp = client.post("/register", json={"username": "newuser", "password": "password1"})
+    assert resp.status_code == 400
+
     # Get token invalid pw
-    resp = client.post("/token", json={"username": "newuser", "password": "wrong"})
+    resp = client.post("/token", json={"username": "newuser", "password": "wrongpwd1"})
     assert resp.status_code == 401
-    
+
     # Get token
-    resp = client.post("/token", json={"username": "newuser", "password": "pw"})
+    resp = client.post("/token", json={"username": "newuser", "password": "password1"})
     assert resp.status_code == 200
     assert "token" in resp.json()
 
@@ -195,8 +200,8 @@ def test_download_report_failures(auth_headers):
 
 def test_admin_self_deletion(test_eco_system):
     # Register admin (first user)
-    test_eco_system.register_user("selfadmin", "pw")
-    token = test_eco_system.generate_token("selfadmin", "pw")
+    test_eco_system.register_user("selfadmin", "password1")
+    token = test_eco_system.generate_token("selfadmin", "password1")
     headers = {"X-API-Token": token}
 
     # Get admin's user id
@@ -211,9 +216,9 @@ def test_admin_self_deletion(test_eco_system):
 
 def test_last_admin_deletion(test_eco_system):
     # Register admin (first user) and a second admin
-    test_eco_system.register_user("admin1", "pw")
-    test_eco_system.register_user("regular", "pw")
-    token = test_eco_system.generate_token("admin1", "pw")
+    test_eco_system.register_user("admin1", "password1")
+    test_eco_system.register_user("regular", "password1")
+    token = test_eco_system.generate_token("admin1", "password1")
     headers = {"X-API-Token": token}
 
     # Get regular user's id
@@ -287,10 +292,10 @@ def test_delete_eco_nonexistent(auth_headers):
 
 
 def test_edit_eco_requires_admin(test_eco_system):
-    test_eco_system.register_user("adminuser", "pw")
-    test_eco_system.register_user("regularuser", "pw")
-    admin_token = test_eco_system.generate_token("adminuser", "pw")
-    user_token = test_eco_system.generate_token("regularuser", "pw")
+    test_eco_system.register_user("adminuser", "password1")
+    test_eco_system.register_user("regularuser", "password1")
+    admin_token = test_eco_system.generate_token("adminuser", "password1")
+    user_token = test_eco_system.generate_token("regularuser", "password1")
 
     # Create ECO as admin
     resp = client.post("/ecos", json={"title": "T", "description": "D"},
@@ -333,12 +338,28 @@ def test_upload_size_limit(auth_headers, monkeypatch):
 def test_health_check():
     resp = client.get("/health")
     assert resp.status_code == 200
-    assert resp.json() == {"status": "ok"}
+    data = resp.json()
+    assert data["status"] == "ok"
+    assert data["database"] == "ok"
+
+
+def test_security_headers():
+    resp = client.get("/health")
+    assert resp.headers["X-Content-Type-Options"] == "nosniff"
+    assert resp.headers["X-Frame-Options"] == "DENY"
+    assert resp.headers["Referrer-Policy"] == "strict-origin-when-cross-origin"
+
+
+def test_list_ecos_includes_creator(auth_headers):
+    client.post("/ecos", json={"title": "Creator", "description": "D"}, headers=auth_headers)
+    resp = client.get("/ecos", headers=auth_headers)
+    assert resp.status_code == 200
+    assert "created_by" in resp.json()[0]
 
 
 def test_logout(test_eco_system):
-    test_eco_system.register_user("logoutuser", "pw")
-    token = test_eco_system.generate_token("logoutuser", "pw")
+    test_eco_system.register_user("logoutuser", "password1")
+    token = test_eco_system.generate_token("logoutuser", "password1")
     headers = {"X-API-Token": token}
 
     # Verify token works
